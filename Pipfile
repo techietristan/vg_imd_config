@@ -1,0 +1,12 @@
+[[source]]
+name = "IMD Configuration Script"
+
+[packages]
+
+[dev-packages]
+
+[scripts]
+dev = "python test"
+
+[requires]
+python_version = "3.12"
