@@ -4,7 +4,14 @@ def get_username(config):
     return input('Please type the username to set: ')
 
 def get_password(config):
-    return getpass('Please enter the password to set: ')
+    password = getpass('Please enter the password to set: ')
+    confirm_password = getpass('Please enter the password again: ')
+
+    if password == confirm_password:
+        return password
+    else:
+        print("Passwords do not match. Please try again.")
+        get_password(config)
 
 def get_credentials(config):
     try:
