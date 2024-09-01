@@ -3,5 +3,8 @@
     "headers": {"Content_Type" : "application/json"},
     "default_api_attempts": 10,
     "default_api_retry_time": 2,
-    "known_bad_firmware_versions": ["5.10.1"]
+    "known_bad_firmware_versions": ["5.10.1"],
+    "firmware_target": "6.1.2",
+    "firmware_file_url": "https://www.vertiv.com/49aa2a/globalassets/documents/",
+    "firmware_filename": "geist-i03-6_1_2-04302024.zip"
 }

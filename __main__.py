@@ -1,6 +1,6 @@
 import sys
 
-from utils.api_utils import get_firmware_version
+from utils.api_utils import get_firmware_version, login_to_imd, reset_imd_to_factory_defaults, set_imd_creds
 from utils.argument_utils import parse_args
 from utils.config_utils import get_config
 
