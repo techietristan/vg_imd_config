@@ -1,6 +1,6 @@
 import argparse
 
-def parse_args(system_arguments):
+def parse_args(system_arguments: list[str]):
     parser = argparse.ArgumentParser(
         prog = 'Vertiv™ Geist™ IMD Configuration Script',
         description = 'Unofficial script for configuring and upgrading Vertiv™ Geist™ IMDs'

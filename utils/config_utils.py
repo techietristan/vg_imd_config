@@ -1,6 +1,6 @@
 import json, os
 
-def get_config(main_file, args):
+def get_config(main_file: str, args: list):
     config_filename = 'default.json'
     script_path = os.path.dirname(main_file)
     json_file_path = f'{script_path}/config/{config_filename}'

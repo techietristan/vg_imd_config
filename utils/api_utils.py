@@ -3,15 +3,15 @@ from utils.format_utils import print_red
 from utils.parse_utils import is_vaild_firmware_version
 from utils.prompt_utils import get_credentials
 
-def get_firmware_version(config, print_result = False):
-    api_url = config['api_base_url']
-    api_firmware_url = f'{api_url}sys/version'
-    headers = config['headers']
+def get_firmware_version(config: dict, print_result: bool = False) -> str:
+    api_url: str = config['api_base_url']
+    api_firmware_url: str= f'{api_url}sys/version'
+    headers: dict = config['headers']
 
     try:
-        firmware_response = requests.get(api_firmware_url, headers).json()
-        response_code = firmware_response['retCode']
-        firmware_version = firmware_response['data']
+        firmware_response: dict = requests.get(api_firmware_url, headers).json()
+        response_code: int = firmware_response['retCode']
+        firmware_version: str = firmware_response['data']
         if response_code == 0 and is_vaild_firmware_version(firmware_version):
             if print_result:
                 print(f'Current IMD Firmware Version: {firmware_version}')
@@ -23,14 +23,29 @@ def get_firmware_version(config, print_result = False):
         if input('Do you want to try again? (Y or N): ').lower() == 'y':
             get_firmware_version(config = config, print_result = print_result)
 
-def interact_with_imd(config, api_endpoint, json_payload, username, password, action = 'post', quiet = True, function_name = '', status_msg = '', success_msg = ''):
+def interact_with_imd(
+    config, 
+    api_endpoint, 
+    json_payload, 
+    username, 
+    password, 
+    action: str = 'post', 
+    quiet: bool = True, 
+    function_name: str = '', 
+    status_msg: str = '', 
+    success_msg: str = '') -> dict | bool:
+
     headers = config['headers']
     api_base_url = config['api_base_url']
     endpoint = f'{api_base_url}{api_endpoint}'
 
     try:
         if not quiet: print(status_msg)
-        request = requests.post(endpoint, headers = headers, json = json_payload)
+        match action:
+            case 'post':
+                request = requests.post(endpoint, headers = headers, json = json_payload)
+            case 'get':
+                request = requests.get(endpoint, headers = headers)
         response = json.loads(request.text)
         if not quiet: print(response)
         if response['retCode'] == 0:
@@ -43,8 +58,8 @@ def interact_with_imd(config, api_endpoint, json_payload, username, password, ac
 
 def set_imd_creds(config, quiet = True):
     username, password = get_credentials(config)
-    creds_api_endpoint = f'auth/'
-    new_user_settings = {'token': '', 'cmd': 'add', 'data': {'username': username, 'password': password, 'enabled': 'true', 'control': 'true', 'admin': 'true', 'language': 'en'}}
+    creds_api_endpoint: str = f'auth/'
+    new_user_settings: dict = {'token': '', 'cmd': 'add', 'data': {'username': username, 'password': password, 'enabled': 'true', 'control': 'true', 'admin': 'true', 'language': 'en'}}
 
     interact_with_imd(
         config = config, 
@@ -60,8 +75,8 @@ def set_imd_creds(config, quiet = True):
 
 def login_to_imd(config, quiet = True):
     username, password = get_credentials(config)
-    login_api_endpoint = f'auth/{username}'
-    login_json = {'token': '', 'cmd': 'login', 'data': {'password': password}}
+    creds_api_endpoint: str = f'auth/{username}'
+    login_json: dict = {'token': '', 'cmd': 'login', 'data': {'password': password}}
 
     interact_with_imd(
         config = config, 
@@ -77,13 +92,13 @@ def login_to_imd(config, quiet = True):
 
 def reset_imd_to_factory_defaults(config, quiet = True):
     username, password = get_credentials(config)
-    reset_api_endpoint = f'sys/'
-    json_payload = {'username': username, 'password': password, 'cmd': "reset", 'data': {'target': "defaults"}}
+    creds_api_endpoint: str = f'sys/'
+    factory_reset_json: dict = {'username': username, 'password': password, 'cmd': "reset", 'data': {'target': "defaults"}}
 
     interact_with_imd(
         config = config, 
         api_endpoint = reset_api_endpoint,
-        json_payload = json_payload,
+        json_payload = factory_reset_json,
         username = username,
         password = password, 
         action = 'post', 

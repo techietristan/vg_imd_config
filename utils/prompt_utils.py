@@ -1,9 +1,9 @@
 from getpass import getpass
 
-def get_username(config):
+def get_username(config: dict) -> str:
     return input('Please type the username to set: ')
 
-def get_password(config):
+def get_password(config: dict) -> str:
     password = getpass('Please enter the password to set: ')
     confirm_password = getpass('Please enter the password again: ')
 
@@ -13,7 +13,7 @@ def get_password(config):
         print("Passwords do not match. Please try again.")
         get_password(config)
 
-def get_credentials(config):
+def get_credentials(config: dict) -> str:
     try:
         username = config['username']
         password = config['password']

@@ -1,5 +1,7 @@
 [[source]]
 name = "IMD Configuration Script"
+url = "https://github.com/techietristan/vg_imd_config"
+verify_ssl = false
 
 [packages]
 
