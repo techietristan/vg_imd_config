@@ -13,7 +13,7 @@ def get_password(config: dict) -> str:
         print("Passwords do not match. Please try again.")
         get_password(config)
 
-def get_credentials(config: dict) -> str:
+def get_credentials(config: dict) -> tuple:
     try:
         username = config['username']
         password = config['password']

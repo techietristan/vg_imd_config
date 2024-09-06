@@ -1,14 +1,13 @@
 [[source]]
 name = "IMD Configuration Script"
-url = "https://github.com/techietristan/vg_imd_config"
-verify_ssl = false
+url = "https://pypi.org/simple"
+verify_ssl = true
 
 [packages]
+requests = "*"
 
 [dev-packages]
-
-[scripts]
-dev = "python test"
+py-mon = "*"
 
 [requires]
 python_version = "3.12"
