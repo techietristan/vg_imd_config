@@ -1,5 +1,15 @@
 from getpass import getpass
 
+def confirm(config: dict = {}, confirm_prompt: str = '') -> bool:
+    user_response = input(confirm_prompt).lower().strip()
+    affirmative_responses = ['yes', 'ye', 'y']
+    negative_responses = ['no', 'n']
+    response_is_positive: bool = user_response in affirmative_responses
+    response_is_negative: bool = user_response in negative_responses
+    invalid_response_prompt: str = 'Invlaid response, please enter \'y\' or \'n\': '
+
+    return True if response_is_positive else False if response_is_negative else confirm(invalid_response_prompt)
+
 def get_username(config: dict) -> str:
     return input('Please type the username to set: ')
 

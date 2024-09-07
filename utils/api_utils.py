@@ -1,7 +1,7 @@
 import json, requests
 from utils.format_utils import print_red
 from utils.parse_utils import is_vaild_firmware_version
-from utils.prompt_utils import get_credentials
+from utils.prompt_utils import confirm, get_credentials
 
 def get_firmware_version(config: dict, print_result: bool = False) -> str:
     api_url: str = config['api_base_url']
@@ -20,15 +20,15 @@ def get_firmware_version(config: dict, print_result: bool = False) -> str:
             raise Exception(firmware_response)
     except:
         print_red('Unable to get IMD firmware version.\nPlease ensure you are able to ping the IMD.')
-        if input('Do you want to try again? (Y or N): ').lower() == 'y':
-            get_firmware_version(config = config, print_result = print_result)
+        if confirm(confirm_prompt = 'Do you want to try again?: '):
+            return get_firmware_version(config = config, print_result = print_result)
 
 def interact_with_imd(
-    config, 
-    api_endpoint, 
-    json_payload, 
-    username, 
-    password, 
+    config: dict, 
+    api_endpoint: str, 
+    json_payload: dict, 
+    username: str, 
+    password: str, 
     action: str = 'post', 
     quiet: bool = True, 
     function_name: str = '', 
@@ -52,9 +52,8 @@ def interact_with_imd(
             if not quiet: print(success_msg)
             return response
     except Exception as error:
-        if not quiet: print(f'Function ${function_name}: {error}')
+        if not quiet: print_red(f'Function ${function_name}: {error}')
         return False
-
 
 def set_imd_creds(config, quiet = True):
     username, password = get_credentials(config)
