@@ -1,6 +1,6 @@
 import unittest
 
-from utils.parse_utils import is_vaild_firmware_version, is_valid_hostname, get_next_in_sequence, guess_next_hostname
+from utils.parse_utils import is_vaild_firmware_version, is_valid_hostname, get_next_in_sequence, guess_next_hostname, parse_firmware_url
 
 test_config: dict = {
     "hostname_format": {
@@ -92,3 +92,39 @@ class TestGuessNextHostname(unittest.TestCase):
         self.assertEqual(guess_next_hostname(test_config, 'AB-HOSTNAME-A1'), 'AB-HOSTNAME-B1')
         self.assertEqual(guess_next_hostname(test_config, 'ab-0123hostname-a1'), 'ab-0123hostname-b1')
         self.assertEqual(guess_next_hostname(test_config, 'AB-0123HOSTNAME-A1'), 'AB-0123HOSTNAME-B1')
+
+class TestParseFirmwareUrl(unittest.TestCase):
+
+    good_url: dict = {
+        'url': 'https://www.vertiv.com/49aa2a/globalassets/documents/geist-i03-6_1_2-04302024.zip',
+        'url_path': 'https://www.vertiv.com/49aa2a/globalassets/documents/',
+        'filename': 'geist-i03-6_1_2-04302024.zip',
+        'firmware_filename': 'geist-i03-6_1_2.firmware',
+        'bare_filename': 'geist-i03-6_1_2-04302024',
+        'extension': 'zip'
+    }
+
+    good_url_periods: dict = {
+        'url': 'https://www.test.com/first/second/third/test-filename.with.periods.ext',
+        'url_path': 'https://www.test.com/first/second/third/',
+        'filename': 'test-filename.with.periods.ext',
+        'firmware_filename': 'test.firmware',
+        'bare_filename': 'test-filename.with.periods',
+        'extension': 'ext'
+    }
+
+    invalid_url: str = 'invalid url string'
+
+    invalid_url_type: list = []
+
+    def test_parse_firmware_url_valid(self):
+        self.assertEqual(parse_firmware_url({}, self.good_url['url']), self.good_url)
+    
+    def test_parse_firmware_url_periods(self):
+        self.assertEqual(parse_firmware_url({}, self.good_url_periods['url']), self.good_url_periods)
+    
+    def test_parse_firmware_url_invalid(self):
+        self.assertFalse(parse_firmware_url({}, self.invalid_url))
+    
+    def test_parse_firmware_url_invalid_type(self):
+        self.assertFalse(parse_firmware_url({}, self.invalid_url_type))

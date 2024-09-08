@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "31db800e79799feb0e081d8709eb67f336d930622fc2d8f2f55e6e3f28011c1e"
+            "sha256": "2ad47b9ed46584696b0c8573a62c88f6e8ac6bfa1c9c5dd4848a3a4358758bb5"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -191,6 +191,15 @@
             ],
             "markers": "python_version >= '3.8'",
             "version": "==2.2.2"
+        },
+        "validators": {
+            "hashes": [
+                "sha256:647fe407b45af9a74d245b943b18e6a816acf4926974278f6dd617778e1e781f",
+                "sha256:c804b476e3e6d3786fa07a30073a4ef694e617805eb1946ceee3fe5a9b8b1321"
+            ],
+            "index": "IMD Configuration Script",
+            "markers": "python_version >= '3.8'",
+            "version": "==0.34.0"
         }
     },
     "develop": {
