@@ -1,7 +1,10 @@
+from utils.format_utils import format_red
+
 from getpass import getpass
 
-def confirm(config: dict = {}, confirm_prompt: str = '') -> bool:
-    user_response = input(confirm_prompt).lower().strip()
+def confirm(config: dict = {}, confirm_prompt: str = '', error = False) -> bool:
+    prompt = format_red(confirm_prompt) if error else confirm_prompt
+    user_response = input(prompt).lower().strip()
     affirmative_responses = ['yes', 'ye', 'y']
     negative_responses = ['no', 'n']
     response_is_positive: bool = user_response in affirmative_responses
