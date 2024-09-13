@@ -2,8 +2,6 @@ import functools, os, requests, shutil, sys
 from tqdm.auto import tqdm
 from utils.prompt_utils import confirm
 
-#"firmware_file_url": "https://www.vertiv.com/49aa2a/globalassets/documents/geist-i03-6_1_2-04302024.zip"
-
 def download_and_extract_firmware(config: dict, firmware_download_destination: str, firmware_dir_path) -> bool:
     firmware_download_url: str = config['firmware_file_url']
     download_headers: dict = {'user-Agent' : 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36'}
@@ -27,7 +25,7 @@ def download_and_extract_firmware(config: dict, firmware_download_destination: s
         else:
             return False
 
-def get_firmware_file_path(config: dict) -> str | bool:
+def get_firmware_file_path(config: dict) -> tuple[str, str] | tuple[bool, bool]:
     parsed_firmware_url: dict = config['parsed_firmware_url']
     firmware_dir_path: str = f'{sys.argv[0]}/firmware/'
     bare_filename: str = parsed_firmware_url['bare_filename']
@@ -43,21 +41,19 @@ def get_firmware_file_path(config: dict) -> str | bool:
     confirm_prompt = 'Firmware file not found. Download and extract firmware from the Virtiv website? '):
         try:
             download_and_extract_firmware(config = config, firmware_download_destination = firmware_download_destination, firmware_dir_path = firmware_dir_path)
-            return True
         except Exception as download_error:
             if confirm(f'Error downloading firmware file: {download_error}\n Try again?', error = True):
-                return download_and_extract_firmware(config = config, firmware_download_destination = firmware_download_destination, firmware_dir_path = firmware_dir_path)
+                return get_firmware_file_path(config)
             else:
-                return False
+                return False, False
     if firmware_zip_file_exists and not firmware_file_exists and confirm(config = config, 
     confirm_prompt = 'Compressed firmware file found. Do you want to extract it?'):
         try:
             shutil.unpack_archive(firmware_download_destination, firmware_dir_path)
             print(f'Firmware extracted to \'{firmware_dir_path}\'.')
-            return True
         except Exception as error:
             if confirm(f'Error extracting firmware file: {error}\n Try again?', error = True):
                 return get_firmware_file_path(config)
             else:
-                return False
-    return firmware_file_path
+                return False, False
+    return firmware_file_path, firmware_filename

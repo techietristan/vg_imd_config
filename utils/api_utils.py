@@ -1,4 +1,4 @@
-import json, requests
+import json, requests, sys
 from utils.format_utils import print_red
 from utils.parse_utils import is_vaild_firmware_version
 from utils.prompt_utils import confirm, get_credentials
@@ -29,7 +29,8 @@ def interact_with_imd(
     json_payload: dict, 
     username: str, 
     password: str, 
-    action: str = 'post', 
+    action: str = 'post',
+    upload_file: tuple = (),
     quiet: bool = True, 
     function_name: str = '', 
     status_msg: str = '', 
@@ -42,20 +43,23 @@ def interact_with_imd(
     try:
         if not quiet: print(status_msg)
         match action:
-            case 'post':
-                request = requests.post(endpoint, headers = headers, json = json_payload)
             case 'get':
                 request = requests.get(endpoint, headers = headers)
+            case 'post':
+                request = requests.post(endpoint, headers = headers, json = json_payload)
+            case 'upload':
+                request = requests.post(endpoint, headers = headers, files = upload_file, verify = False)
         response = json.loads(request.text)
         if not quiet: print(response)
         if response['retCode'] == 0:
             if not quiet: print(success_msg)
             return response
     except Exception as error:
-        if not quiet: print_red(f'Function ${function_name}: {error}')
+        if not quiet: print_red(f'Function \'{function_name}\' error: \'{error}\'')
+        raise Exception
         return False
 
-def set_imd_creds(config, quiet = True):
+def set_imd_creds(config: dict, quiet: bool = True):
     username, password = get_credentials(config)
     creds_api_endpoint: str = f'auth/'
     new_user_settings: dict = {'token': '', 'cmd': 'add', 'data': {'username': username, 'password': password, 'enabled': 'true', 'control': 'true', 'admin': 'true', 'language': 'en'}}
@@ -72,7 +76,7 @@ def set_imd_creds(config, quiet = True):
         status_msg = 'Setting IMD Credentials.',
         success_msg = 'Successfully Set IMD credentials!')
 
-def login_to_imd(config, quiet = True):
+def login_to_imd(config: dict, quiet: bool = True):
     username, password = get_credentials(config)
     creds_api_endpoint: str = f'auth/{username}'
     login_json: dict = {'token': '', 'cmd': 'login', 'data': {'password': password}}
@@ -89,7 +93,7 @@ def login_to_imd(config, quiet = True):
         status_msg = 'Logging into IMD.',
         success_msg = 'Successfully Logged into IMD!')
 
-def reset_imd_to_factory_defaults(config, quiet = True):
+def reset_imd_to_factory_defaults(config: dict, quiet: bool = True):
     username, password = get_credentials(config)
     creds_api_endpoint: str = f'sys/'
     factory_reset_json: dict = {'username': username, 'password': password, 'cmd': "reset", 'data': {'target': "defaults"}}
@@ -105,4 +109,20 @@ def reset_imd_to_factory_defaults(config, quiet = True):
         function_name = 'reset_imd_to_factory_defaults', 
         status_msg = 'Resetting IMD to Factory Defaults.',
         success_msg = 'Successfully Reset IMD to Factory Defaults!')
-    
+
+def upgrade_imd_firmware(config: dict, firmware_file_path: str, firmware_filename: str, quiet: bool = True):
+    username, password = get_credentials(config)
+    firmware_upgrade_api_endpoint: str = f'transfer/firmware?username={username}?password={password}'
+
+    interact_with_imd(
+        config = config, 
+        api_endpoint = firmware_upgrade_api_endpoint,
+        json_payload = {},
+        username = username,
+        password = password, 
+        action = 'upload', 
+        upload_file = {'file': (firmware_filename, open(firmware_file_path, 'rb'))},
+        quiet = quiet, 
+        function_name = 'upgrade_imd_firmware', 
+        status_msg = 'Upgrading IMD Firmware.',
+        success_msg = 'Successfully Upgraded IMD Firmware!')
