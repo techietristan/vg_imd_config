@@ -1,4 +1,4 @@
-import json, requests, sys, time
+import json, requests, sys, time, urllib3
 from halo import Halo
 
 from utils.firmware_utils import get_firmware_file_path
@@ -6,26 +6,33 @@ from utils.format_utils import print_red
 from utils.parse_utils import is_vaild_firmware_version
 from utils.prompt_utils import confirm, get_credentials
 
-@Halo(text = 'Checking current IMD firmware version...\n', spinner = 'dots')
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
 def get_firmware_version(config: dict, print_result: bool = False) -> str:
+
+    spinner = Halo(text = 'Checking current IMD firmware version...\n', spinner = 'dots')
+    
     api_url: str = config['api_base_url']
     api_firmware_url: str= f'{api_url}sys/version'
     headers: dict = config['headers']
 
     try:
-        firmware_response: dict = requests.get(api_firmware_url, headers).json()
+        spinner.start()
+        firmware_response: dict = requests.get(api_firmware_url, headers = headers, verify = False).json()
         response_code: int = firmware_response['retCode']
         firmware_version: str = firmware_response['data']
         if response_code == 0 and is_vaild_firmware_version(config = config, firmware_version = firmware_version):
             if print_result:
                 time.sleep(1)
-                print(f'\nCurrent IMD Firmware Version: {firmware_version}')
+                spinner.succeed(f'\nCurrent IMD Firmware Version: {firmware_version}')
+            else:
+                spinner.stop()
             return firmware_version
         else:
-            print_red(firmware_response)
+            spinner.fail(firmware_response)
             raise Exception(firmware_response)
     except Exception as error:
-        print_red(f'Unable to get IMD firmware version: {error}\nPlease ensure you are able to ping the IMD.')
+        spinner.fail(f'Unable to get IMD firmware version: {error}\nPlease ensure you are able to ping the IMD.')
         if confirm(confirm_prompt = 'Do you want to try again?: '):
             return get_firmware_version(config = config, print_result = print_result)
 
@@ -45,26 +52,29 @@ def interact_with_imd(
     headers = config['headers']
     api_base_url = config['api_base_url']
     url = f'{api_base_url}{api_endpoint}'
+    spinner = Halo(text = f'{status_msg}\n', spinner = 'dots')
 
-    @Halo(text = f'{status_msg}\n', spinner = 'dots')
     def make_api_call(config):
         try:
-            if not quiet: print(status_msg)
+            spinner.start()
             match action:
                 case 'get':
-                    request = requests.get(url, headers = headers)
+                    request = requests.get(url, headers = headers, verify = False)
                 case 'post':
-                    request = requests.post(url, headers = headers, json = json_payload)
+                    request = requests.post(url, headers = headers, json = json_payload, verify = False)
             response = json.loads(request.text)
             if not quiet: print(response)
             if response['retCode'] == 0:
-                if not quiet: print(success_msg)
+                if not quiet: spinner.succeed(success_msg)
             else:
-                print_red(f'IMD Error: {response}.')
+                spinner.fail(f'IMD Error: {response['retMsg']}.')
             return response
+        except requests.exceptions.ConnectionError as error:
+            spinner.fail(f'Error while interacting with IMD: {error}.')
+            if confirm('Do you want to try again? (y or n): '):
+                make_api_call(config)
         except Exception as error:
-            if not quiet: print_red(f'Function \'{function_name}\' error: \'{error}\'')
-            raise Exception
+            if not quiet: spinner.fail(f'Function \'{function_name}\' error: \'{error}\'')
             return False
     return make_api_call(config)
 
@@ -102,7 +112,10 @@ def login_to_imd(config: dict, quiet: bool = True) -> dict | bool:
         status_msg = 'Logging into IMD.',
         success_msg = 'Successfully Logged into IMD!')
     
-    return response['data']['token']
+    try:
+        return response['data']['token']
+    except Exception:
+        return False
 
 def reset_imd_to_factory_defaults(config: dict, quiet: bool = True) -> dict | bool:
     username, password = get_credentials(config)
@@ -132,7 +145,7 @@ def upgrade_imd_firmware(config: dict, quiet: bool = True) -> dict | bool:
         if bool(firmware_file_path):
             username, password = get_credentials(config)
             token = login_to_imd(config)
-            firmware_upgrade_api_endpoint: str = f'http://{config['current_imd_ip']}/transfer/firmware?token={token}'
+            firmware_upgrade_api_endpoint: str = f'https://{config['current_imd_ip']}/transfer/firmware?token={token}'
             firmware_upgrade_headers: dict = {'Content_Type' : 'multipart/form-data'}
             
             @Halo(text = 'Upgrading IMD Firmware...', spinner = 'dots')
@@ -152,7 +165,7 @@ def upgrade_imd_firmware(config: dict, quiet: bool = True) -> dict | bool:
                     return response
                 except Exception as error:
                     print_red(f'\nError upgrading IMD firmware: {error}')
-                    if confirm('Do you want to try again (y or n): '):
+                    if confirm('\nDo you want to try again (y or n): '):
                         upgrade_firmware(config)
 
             return upgrade_firmware(config)

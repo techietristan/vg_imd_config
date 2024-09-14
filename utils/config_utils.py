@@ -16,7 +16,7 @@ def get_config(main_file: str, args: list):
 
     finished_config = {**config, 
         "current_imd_ip": current_imd_ip,
-        "api_base_url": f'http://{current_imd_ip}/api/',
+        "api_base_url": f'https://{current_imd_ip}/api/',
         "parsed_firmware_url": parsed_firmware_url
         }
 
