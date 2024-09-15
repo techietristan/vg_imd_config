@@ -92,6 +92,13 @@ class TestGuessNextHostname(TestCase):
         self.assertEqual(guess_next_hostname(test_config, 'AB-HOSTNAME-A1'), 'AB-HOSTNAME-B1')
         self.assertEqual(guess_next_hostname(test_config, 'ab-0123hostname-a1'), 'ab-0123hostname-b1')
         self.assertEqual(guess_next_hostname(test_config, 'AB-0123HOSTNAME-A1'), 'AB-0123HOSTNAME-B1')
+        self.assertEqual(guess_next_hostname(test_config, 'hostname-b1'), 'hostname-a1')
+        self.assertEqual(guess_next_hostname(test_config, 'HOSTNAME-B1'), 'HOSTNAME-A1')
+    
+    def test_guess_next_hostname_exception(self):
+        self.assertRaises(TypeError, guess_next_hostname({}, 'hostname-ps-a1'))
+        self.assertRaises(TypeError, guess_next_hostname({}, {'test_key': 'test_value'}))
+        self.assertRaises(TypeError, guess_next_hostname(test_config, 'hostname-ps-a1'))
 
 class TestParseFirmwareUrl(TestCase):
 
@@ -114,8 +121,9 @@ class TestParseFirmwareUrl(TestCase):
     }
 
     invalid_url: str = 'invalid url string'
-
     invalid_url_type: list = []
+    unparseable_url: str = 'https://some.unparsable.url/cant/parse/this'
+
 
     def test_parse_firmware_url_valid(self):
         self.assertEqual(parse_firmware_url({}, self.good_url['url']), self.good_url)
@@ -128,3 +136,6 @@ class TestParseFirmwareUrl(TestCase):
     
     def test_parse_firmware_url_invalid_type(self):
         self.assertFalse(parse_firmware_url({}, self.invalid_url_type))
+    
+    def test_parse_firmware_raises_exception(self):
+        self.assertRaises(TypeError, parse_firmware_url({}, self.unparseable_url))

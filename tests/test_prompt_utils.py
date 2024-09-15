@@ -34,8 +34,35 @@ class TestGetUsername(TestCase):
             returned_value = utils.prompt_utils.get_username({})
             self.assertEqual('test_username', returned_value)
 
-class TestInputWithDefault(TestCase):
+class TestGetPassword(TestCase):
+    @mock.patch('utils.prompt_utils.getpass', create = True)
+    def test_get_password_returns_string(self, mock_input):
+        mock_input.side_effect=['same_password', 'same_password']
+        returned_value = utils.prompt_utils.get_password({})
+        self.assertEqual(type(returned_value), str)
 
+    @mock.patch('utils.prompt_utils.getpass', create = True)    
+    def test_get_password_returns_password(self, mock_input):
+        mock_input.side_effect=['same_password', 'same_password']
+        returned_value = utils.prompt_utils.get_password({})
+        self.assertEqual(returned_value, 'same_password')
+
+    @mock.patch('utils.prompt_utils.getpass', create = True)    
+    def test_get_password_retries_on_mismatch(self, mock_input):
+        mock_input.side_effect=['some_password', 'different_password', 'same_password', 'same_password']
+        returned_value = utils.prompt_utils.get_password({})
+        self.assertEqual(returned_value, 'same_password')
+        
+class TestGetCredentials(TestCase):
+    def test_get_credentials_returns_current_creds(self):
+        self.config_with_creds = {
+            'username': 'test_username',
+            'password': 'test_password'
+        }
+        returned_creds = utils.prompt_utils.get_credentials(self.config_with_creds)
+        self.assertEqual(returned_creds, ('test_username', 'test_password'))
+
+class TestInputWithDefault(TestCase):
     @mock.patch('utils.prompt_utils.input', create = True)
     def test_input_with_default_returns_default(self, mock_input):
         mock_input.side_effect = ['']

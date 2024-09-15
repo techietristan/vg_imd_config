@@ -49,10 +49,10 @@ def guess_next_hostname(config: dict, hostname: str) -> str | None:
             for index, part in enumerate(hostname_parts) ]
         next_hostname: str = ''.join(next_hostname_parts)
         return next_hostname
-    except Exception:
+    except (re.error, TypeError, KeyError, AttributeError):
         return None
 
-def parse_firmware_url(config: dict, url: str):
+def parse_firmware_url(config: dict, url: str) -> dict | bool:
     if type(url) is not str or not validators.url(url):
         return False
     try:
@@ -72,5 +72,5 @@ def parse_firmware_url(config: dict, url: str):
             'extension': extension
         }
         return parsed_url
-    except IndexError:
+    except (IndexError, TypeError):
         return False

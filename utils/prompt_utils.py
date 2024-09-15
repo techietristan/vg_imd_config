@@ -25,7 +25,7 @@ def get_password(config: dict) -> str:
         return password
     else:
         print("Passwords do not match. Please try again.")
-        get_password(config)
+        return get_password(config)
 
 def update_credentials(config: dict) -> None:
     username = get_username(config)
@@ -35,7 +35,6 @@ def update_credentials(config: dict) -> None:
 
 def get_credentials(config: dict) -> tuple:
     if 'password' not in config.keys():
-        print(config.keys(), 'password' not in config.keys())
         update_credentials(config)
     return config['username'], config['password']
 
