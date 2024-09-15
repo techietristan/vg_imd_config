@@ -94,6 +94,9 @@ class TestGuessNextHostname(TestCase):
         self.assertEqual(guess_next_hostname(test_config, 'AB-0123HOSTNAME-A1'), 'AB-0123HOSTNAME-B1')
         self.assertEqual(guess_next_hostname(test_config, 'hostname-b1'), 'hostname-a1')
         self.assertEqual(guess_next_hostname(test_config, 'HOSTNAME-B1'), 'HOSTNAME-A1')
+        self.assertEqual(guess_next_hostname(test_config, 'hostname-ps-a1'), 'hostname-ps-b1')
+        self.assertEqual(guess_next_hostname(test_config, 'HOSTNAME-ps-A1'), 'HOSTNAME-ps-B1')
+        self.assertEqual(guess_next_hostname(test_config, 'ab-012345-ps-a1'), 'ab-012345-ps-b1')
     
     def test_guess_next_hostname_exception(self):
         self.assertRaises(TypeError, guess_next_hostname({}, 'hostname-ps-a1'))

@@ -17,14 +17,15 @@ def confirm(config: dict = {}, confirm_prompt: str = '', error = False) -> bool:
 def get_username(config: dict) -> str:
     return input('Please enter the username: ').strip()
 
-def get_password(config: dict) -> str:
+def get_password(config: dict, quiet = False) -> str:
     password: str = getpass('Please enter the password: ')
     confirm_password: str = getpass('Please enter the password again: ')
 
-    if password == confirm_password:
+    if password == confirm_password: 
         return password
     else:
-        print("Passwords do not match. Please try again.")
+        if not quiet:
+            print("Passwords do not match. Please try again.")
         return get_password(config)
 
 def update_credentials(config: dict) -> None:
@@ -42,7 +43,7 @@ def input_with_default(prompt: str, default: str) -> None:
     user_input = input(f'{prompt} (press ENTER to use {default}): ')
     return default if user_input == '' else user_input
 
-def get_next_imd_configuration(config: dict, print_greeting: bool = True) -> bool:
+def get_next_imd_config(config: dict, print_greeting: bool = True) -> bool:
     if print_greeting:
         print('Welcome to the Geist Vertiv IMD Configuration Script!\n')
 
@@ -59,6 +60,7 @@ def get_next_imd_configuration(config: dict, print_greeting: bool = True) -> boo
         rack_guess = str(int(current['rack']) + 1).zfill(2) if current['pdu_letter'] == 'B' else current['rack']
         pdu_letter_guess = 'A' if current['pdu_letter'] == 'B' else 'B'
         pdu_hostname_guess = guess_next_hostname(config, current['pdu_hostname'])
+        print(f'guessing {pdu_hostname_guess} from input of {current['pdu_hostname']}')
 
         row: str = input_with_default('Please enter the row number', row_guess).zfill(2)
         rack: str = input_with_default('Please enter the rack number', rack_guess).zfill(2)
@@ -76,7 +78,7 @@ def get_next_imd_configuration(config: dict, print_greeting: bool = True) -> boo
     elif confirm(config, 'Do you want to try again? (y or n): '):
         if confirm(config, 'Do you want to change the username and password? (y or n): '):
             update_credentials(config)
-        return get_next_imd_configuration(config, print_greeting = False)
+        return get_next_imd_config(config, print_greeting = False)
     else:
         return False
 
