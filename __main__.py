@@ -24,7 +24,7 @@ try:
 
     if not any (bool(value) for value in vars(args).values()):
         if get_next_imd_configuration(config):
-            pass
+            
     
 except KeyboardInterrupt:
     print('Exiting Script')
