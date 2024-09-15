@@ -15,11 +15,11 @@ def confirm(config: dict = {}, confirm_prompt: str = '', error = False) -> bool:
     return True if response_is_positive else False if response_is_negative else confirm(invalid_response_prompt)
 
 def get_username(config: dict) -> str:
-    return input('Please enter the username: ')
+    return input('Please enter the username: ').strip()
 
 def get_password(config: dict) -> str:
-    password = getpass('Please enter the password: ')
-    confirm_password = getpass('Please enter the password again: ')
+    password: str = getpass('Please enter the password: ')
+    confirm_password: str = getpass('Please enter the password again: ')
 
     if password == confirm_password:
         return password

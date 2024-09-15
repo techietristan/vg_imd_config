@@ -163,3 +163,7 @@ cython_debug/
 
 # Tempory Files
 temp*.py
+
+# Coverage Files
+.coverage
+coverage.lcov

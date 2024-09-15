@@ -1,4 +1,4 @@
-import unittest
+from unittest import TestCase
 
 from utils.parse_utils import is_vaild_firmware_version, is_valid_hostname, get_next_in_sequence, guess_next_hostname, parse_firmware_url
 
@@ -10,7 +10,7 @@ test_config: dict = {
     }
 }
 
-class TestIsValidFirmwareVersion(unittest.TestCase):
+class TestIsValidFirmwareVersion(TestCase):
 
     def test_is_valid_firmware_version_valid_string(self):
         self.assertTrue(is_vaild_firmware_version(test_config, '1.2.3'))
@@ -29,7 +29,7 @@ class TestIsValidFirmwareVersion(unittest.TestCase):
         self.assertFalse(is_vaild_firmware_version(test_config, 3.3))
         self.assertFalse(is_vaild_firmware_version(test_config, {'key': 'value'}))
 
-class TestIsValidHostname(unittest.TestCase):
+class TestIsValidHostname(TestCase):
 
     def test_is_valid_hostname_valid(self):
         self.assertTrue(is_valid_hostname(test_config, 'test-hostname-r'))
@@ -52,7 +52,7 @@ class TestIsValidHostname(unittest.TestCase):
         self.assertFalse(is_valid_hostname(test_config, 'Test_Hostname'))
         self.assertFalse(is_valid_hostname(test_config, 'test-hostname+'))
 
-class TestGetNextInSequence(unittest.TestCase):
+class TestGetNextInSequence(TestCase):
     
     def test_get_next_in_sequence_invalid_arguments(self):
 
@@ -75,7 +75,7 @@ class TestGetNextInSequence(unittest.TestCase):
         self.assertEqual(get_next_in_sequence(test_config, 'B'), 'A')
         self.assertEqual(get_next_in_sequence(test_config, 'A'), 'B')
 
-class TestGuessNextHostname(unittest.TestCase):
+class TestGuessNextHostname(TestCase):
 
     def test_guess_next_hostname_invalid(self):
         self.assertIsNone(guess_next_hostname(test_config, 'hostname a'))
@@ -93,7 +93,7 @@ class TestGuessNextHostname(unittest.TestCase):
         self.assertEqual(guess_next_hostname(test_config, 'ab-0123hostname-a1'), 'ab-0123hostname-b1')
         self.assertEqual(guess_next_hostname(test_config, 'AB-0123HOSTNAME-A1'), 'AB-0123HOSTNAME-B1')
 
-class TestParseFirmwareUrl(unittest.TestCase):
+class TestParseFirmwareUrl(TestCase):
 
     good_url: dict = {
         'url': 'https://www.vertiv.com/49aa2a/globalassets/documents/geist-i03-6_1_2-04302024.zip',

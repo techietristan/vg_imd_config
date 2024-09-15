@@ -8,4 +8,5 @@ dev:
 	pymon tests/run_all_unit_tests.py -p *.py
 
 test:
-	python -m unittest
+	coverage xml
+	coverage run -m unittest discover

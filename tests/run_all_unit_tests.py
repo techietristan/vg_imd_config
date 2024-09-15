@@ -1,3 +1,4 @@
 import subprocess
 
-subprocess.run(['python', '-m', 'unittest'])
+subprocess.run(['coverage', 'xml'])
+subprocess.run(['coverage', 'run', '-m', 'unittest', 'discover'])
