@@ -1,7 +1,6 @@
 from unittest import TestCase
 
-from utils.parse_utils import is_vaild_firmware_version, is_valid_hostname, get_next_in_sequence, guess_next_hostname, parse_firmware_url
-
+from utils.parse_utils import is_vaild_firmware_version, is_valid_hostname, get_next_in_sequence, guess_next_hostname, parse_firmware_url, verify_input, format_user_input
 test_config: dict = {
     "hostname_format": {
         "hostname_regex": "(.+)([a,b,A,B])(\\d)$",
@@ -142,3 +141,29 @@ class TestParseFirmwareUrl(TestCase):
     
     def test_parse_firmware_raises_exception(self):
         self.assertRaises(TypeError, parse_firmware_url({}, self.unparseable_url))
+    
+
+class TestVerifyInput(TestCase):
+    def test_verify_input_valid_int(self):
+        valid_result = verify_input({}, ['is_int'], '4')
+        self.assertTrue(valid_result)
+    def test_verify_input_invalid_int(self):
+        invalid_result = verify_input({}, ['is_int'], 'abc')
+        self.assertFalse(invalid_result)
+    def test_verify_input_is_one_of(self):
+        valid_result = verify_input({}, ['is_one_of', ['a','b']], 'A')
+        self.assertTrue(valid_result)
+    def test_verify_input_is_not_one_of(self):
+        invalid_result = verify_input({}, ['is_one_of', ['a','b']], 'C')
+        self.assertFalse(invalid_result)
+
+class TestFormatUserInput(TestCase):
+    def test_format_user_input_none(self):
+        formatted_user_input = format_user_input({}, [], 'test_input ')
+        self.assertEqual(formatted_user_input, 'test_input')
+    def test_format_user_input_zfill(self):
+        formatted_user_input = format_user_input({}, ['zfill', 2], '7 ')
+        self.assertEqual(formatted_user_input, '07')
+    def test_format_user_input_lower(self):
+        formatted_user_input = format_user_input({}, ['lower'], 'TEST INPUT ')
+        self.assertEqual(formatted_user_input, 'test input')  

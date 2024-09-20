@@ -74,3 +74,30 @@ def parse_firmware_url(config: dict, url: str) -> dict | bool:
         return parsed_url
     except (IndexError, TypeError):
         return False
+
+def verify_input(config: dict, verify_function: list, user_input: str) -> bool:
+    if bool(verify_function):
+        match verify_function[0]:
+            case 'is_int':
+                try:
+                    is_valid_input = type(int(user_input.strip())) == int
+                except ValueError:
+                    is_valid_input = False
+            case 'is_one_of':
+                is_valid_input = user_input.strip().lower() in verify_function[1]
+    else:
+        is_valid_input = True
+    
+    return is_valid_input
+
+def format_user_input(config: dict, format_function: dict, user_input: str) -> str:
+    if bool(format_function):
+            match format_function[0]:
+                case 'zfill':
+                    formatted_user_input = user_input.strip().zfill(format_function[1])
+                case 'lower':
+                    formatted_user_input = user_input.strip().lower()
+    else:
+        formatted_user_input = user_input.strip()
+    
+    return formatted_user_input

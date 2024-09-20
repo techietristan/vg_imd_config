@@ -5,30 +5,35 @@ from utils.argument_utils import parse_args
 from utils.config_utils import get_config
 from utils.prompt_utils import get_next_imd_configuration
 
-args = parse_args(sys.argv)
-config = get_config(main_file = __file__, args = args)
+def main():
+    args = parse_args(sys.argv)
+    config = get_config(main_file = __file__, args = args)
 
-try:
-    if args.get_firmware_version:
-        get_firmware_version(config = config, print_result = True)
-        sys.exit(0)
-
-    if args.reset_imd:
-        reset_imd_to_factory_defaults(config = config, quiet = False)
-
-    if args.set_password:
-        set_imd_creds(config = config, quiet = False)
-
-    if args.upgrade:
-        upgrade_imd_firmware(config = config, quiet = False)
-
-    if not any (bool(value) for value in vars(args).values()):
-        if get_next_imd_configuration(config):
-            
-    
-except KeyboardInterrupt:
-    print('Exiting Script')
     try:
-        sys.exit(130)
-    except SystemExit:
-        os._exit(130)
+        if args.get_firmware_version:
+            get_firmware_version(config = config, print_result = True)
+            sys.exit(0)
+
+        if args.reset_imd:
+            reset_imd_to_factory_defaults(config = config, quiet = False)
+
+        if args.set_password:
+            set_imd_creds(config = config, quiet = False)
+
+        if args.upgrade:
+            upgrade_imd_firmware(config = config, quiet = False)
+
+        if not any (bool(value) for value in vars(args).values()):
+            if get_next_imd_configuration(config):
+                pass
+
+    except KeyboardInterrupt:
+        print('Exiting Script')
+        try:
+            sys.exit(130)
+        except SystemExit:
+            os._exit(130)
+
+
+if __name__ == "__main__":
+    main()

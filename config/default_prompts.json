@@ -1,4 +1,5 @@
 {
+    "version": "1.0",
     "greeting": {
         "text": "Welcome to the Geist Vertiv IMD Configuration Script!\n",
         "display": 1
@@ -9,9 +10,9 @@
             "config_item_name": "Rack Row",
             "prompt_text": "rack row",
             "example_text": "7",
-            "guess_function": ["zfill", "2"],
-            "verify_function": [""],
-            "input_function": "input",
+            "verify_function": ["is_int"],
+            "format_function": ["zfill", "2"],
+            "input_mode": "input",
             "default_value": "",
             "api_path": "",
             "test": 0
@@ -21,9 +22,9 @@
             "config_item_name": "Rack Number",
             "prompt_text": "rack number",
             "example_text": "5",
-            "guess_function": ["zfill", "2"],
-            "verify_function": [""],
-            "input_function": "input",
+            "verify_function": ["is_int"],
+            "format_function": ["zfill", "2"],
+            "input_mode": "input",
             "default_value": "",
             "api_path": "",
             "test": 0
@@ -33,9 +34,9 @@
             "config_item_name": "PDU Letter",
             "prompt_text": "PDU letter",
             "example_text": "",
-            "guess_function": ["upper"],
-            "verify_function": [""],
-            "input_function": "input",
+            "verify_function": ["is_one_of", ["a", "b"]],
+            "format_function": [""],
+            "input_mode": "input",
             "default_value": "A",
             "api_path": "",
             "test": 0
@@ -45,9 +46,9 @@
             "config_item_name": "IMD Hostname",
             "prompt_text": "IMD hostname",
             "example_text": "ab-0123456-ps-b1",
-            "guess_function": [""],
             "verify_function": [""],
-            "input_function": "input",
+            "format_function": [""],
+            "input_mode": "input",
             "default_value": "",
             "api_path": "",
             "test": 0
@@ -57,9 +58,9 @@
             "config_item_name": "Primary NTP Server",
             "prompt_text": "primary NTP FQDN: ",
             "example_text": "time.primary.net",
-            "guess_function": [""],
             "verify_function": [""],
-            "input_function": "input",
+            "format_function": [""],
+            "input_mode": "input",
             "default_value": "",
             "api_path": "",
             "test": 0
@@ -69,9 +70,9 @@
             "config_item_name": "Secondary NTP Server",
             "prompt_text": "the secondary NTP FQDN: ",
             "example_text": "time.secondary.net",
-            "guess_function": [""],
             "verify_function": [""],
-            "input_function": "input",
+            "format_function": [""],
+            "input_mode": "input",
             "default_value": "",
             "api_path": "",
             "test": 0
@@ -81,9 +82,9 @@
             "config_item_name": "Username",
             "prompt_text": "username",
             "example_text": "hacker",
-            "guess_function": [""],
             "verify_function": [""],
-            "input_function": "input",
+            "format_function": [""],
+            "input_mode": "input",
             "default_value": "",
             "api_path": "",
             "test": 0
@@ -91,12 +92,22 @@
         {
             "config_item": "password",
             "config_item_name": "Password",
-            "prompt_text": "l337+C0d3r$",
-            "example_text": "time.secondary.net",
-            "guess_function": [""],
+            "prompt_text": "password",
+            "example_text": "l337+C0d3r$",
             "verify_function": [""],
-            "input_function": "getpass",
+            "format_function": [""],
+            "input_mode": "getpass",
             "default_value": "",
+            "api_path": "",
+            "test": 0
+        }
+    ],
+
+    "formatters": [
+        {
+            "config-item": "location",
+            "config-item-name": "Rack Location",
+            "format_function": [ "get_location", "row", "rack", "pdu_letter" ],
             "api_path": "",
             "test": 0
         }
