@@ -123,8 +123,9 @@
         {
             "config-item": "location",
             "config-item-name": "Rack Location",
-            "format_function": [ "get_location_string", "row", "rack", "pdu_letter" ],
-            "api_path": "",
+            "api_path": "conf/contact",
+            "post_keys": ["description"],
+            "format_functions": [[ "apply_template", "R{row}-{rack}/{pdu_letter}", ["row", "rack", "pdu_letter"] ]],
             "test": 0
         }
     ]

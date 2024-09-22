@@ -101,7 +101,6 @@ def verify_input(config: dict, input_params: dict, user_input: str) -> bool:
     else:
         return True
 
-
 def format_user_input(config: dict, input_params: dict, user_input: str) -> str:
     format_function: list = input_params['format_function']
     stripped_user_input = user_input.strip()
@@ -117,3 +116,12 @@ def format_user_input(config: dict, input_params: dict, user_input: str) -> str:
         formatted_user_input = stripped_user_input
     
     return formatted_user_input
+
+def apply_format_function(config: dict, format_function: list, parsed_prompt_responses: dict) -> str:
+    match format_function[0]:
+        case 'apply_template':
+            format_function_template: str = format_function[1]
+            format_function_keys: dict = [ format_function_key for format_function_key in format_function[2] ]
+            prompt_responses: dict = { response['config_item'] : response['value'] for response in parsed_prompt_responses }
+            formatted_string: str = format_function_template.format(**prompt_responses)
+            return formatted_string

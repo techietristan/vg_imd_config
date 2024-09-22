@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from utils.parse_utils import is_vaild_firmware_version, is_valid_hostname, get_next_in_sequence, guess_next_hostname, parse_firmware_url, verify_input, format_user_input
+from utils.parse_utils import is_vaild_firmware_version, is_valid_hostname, get_next_in_sequence, guess_next_hostname, parse_firmware_url, verify_input, format_user_input, apply_format_function
 test_config: dict = {
     "hostname_format": {
         "hostname_regex": "(.+)([a,b,A,B])(\\d)$",
@@ -320,3 +320,36 @@ class TestFormatUserInput(TestCase):
         test_prompt = {'format_function': ['upper'], 'empty_allowed': 0}
         formatted_user_input = format_user_input({}, test_prompt, 'test input ')
         self.assertEqual(formatted_user_input, 'TEST INPUT')  
+
+class TestApplyFormatFunction(TestCase):
+    test_formatter: dict = {
+            "config-item": "location",
+            "config-item-name": "Rack Location",
+            "api_path": "conf/contact",
+            "post_keys": ["description"],
+            "format_functions": [[ "apply_template", "R{row}-{rack}/{pdu_letter}", ["row", "rack", "pdu_letter"] ]],
+            "test": 0
+    }
+
+    test_parsed_promts: list[dict] = [
+        {
+            "config_item": "row",
+            "value": "04",
+        },
+        {
+            "config_item": "rack",
+            "value": "04",
+        },
+        {
+            "config_item": "pdu_letter",
+            "value": "A",
+        }
+    ]
+
+    expected_formatted_string: str = "R04-04/A"
+
+    def test_apply_format_function_apply_template(self):
+        format_function: list = self.test_formatter['format_functions'][0]
+        formatted_string = apply_format_function({}, format_function, self.test_parsed_promts)
+        self.assertEqual(formatted_string, self.expected_formatted_string)
+
