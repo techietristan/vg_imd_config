@@ -3,7 +3,7 @@ import os, sys
 from utils.api_utils import get_firmware_version, reset_imd_to_factory_defaults, set_imd_creds, upgrade_imd_firmware
 from utils.argument_utils import parse_args
 from utils.config_utils import get_config
-from utils.prompt_utils import get_next_imd_configuration
+from utils.prompt_utils import get_next_imd_config
 
 def main():
     args = parse_args(sys.argv)
@@ -24,11 +24,11 @@ def main():
             upgrade_imd_firmware(config = config, quiet = False)
 
         if not any (bool(value) for value in vars(args).values()):
-            if get_next_imd_configuration(config):
-                pass
+            next_imd_conf = get_next_imd_config(config)
+            print(next_imd_conf)
 
     except KeyboardInterrupt:
-        print('Exiting Script')
+        print('\nKeyboard Interrupt Received. Exiting Script')
         try:
             sys.exit(130)
         except SystemExit:

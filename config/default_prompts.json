@@ -1,7 +1,7 @@
 {
     "version": "1.0",
     "greeting": {
-        "text": "Welcome to the Geist Vertiv IMD Configuration Script!\n",
+        "text": "\nWelcome to the Geist Vertiv IMD Configuration Script!\n",
         "display": 1
     },
     "prompts": [
@@ -11,10 +11,12 @@
             "prompt_text": "rack row",
             "example_text": "7",
             "verify_function": ["is_int"],
-            "format_function": ["zfill", "2"],
+            "format_function": ["zfill", 2],
             "input_mode": "input",
             "default_value": "",
             "api_path": "",
+            "empty_allowed": 0,
+            "required": 1,
             "test": 0
         },
         {
@@ -23,22 +25,26 @@
             "prompt_text": "rack number",
             "example_text": "5",
             "verify_function": ["is_int"],
-            "format_function": ["zfill", "2"],
+            "format_function": ["zfill", 2],
             "input_mode": "input",
             "default_value": "",
             "api_path": "",
+            "empty_allowed": 0,
+            "required": 1,
             "test": 0
         },
         {
             "config_item": "pdu_letter",
             "config_item_name": "PDU Letter",
             "prompt_text": "PDU letter",
-            "example_text": "",
+            "example_text": "b",
             "verify_function": ["is_one_of", ["a", "b"]],
-            "format_function": [""],
+            "format_function": [],
             "input_mode": "input",
-            "default_value": "A",
+            "default_value": "a",
             "api_path": "",
+            "empty_allowed": 0,
+            "required": 1,
             "test": 0
         },
         {
@@ -46,11 +52,13 @@
             "config_item_name": "IMD Hostname",
             "prompt_text": "IMD hostname",
             "example_text": "ab-0123456-ps-b1",
-            "verify_function": [""],
-            "format_function": [""],
+            "verify_function": ["is_hostname"],
+            "format_function": [],
             "input_mode": "input",
             "default_value": "",
             "api_path": "",
+            "empty_allowed": 0,
+            "required": 1,
             "test": 0
         },
         {
@@ -58,11 +66,13 @@
             "config_item_name": "Primary NTP Server",
             "prompt_text": "primary NTP FQDN: ",
             "example_text": "time.primary.net",
-            "verify_function": [""],
-            "format_function": [""],
+            "verify_function": ["is_domain_name"],
+            "format_function": [],
             "input_mode": "input",
             "default_value": "",
             "api_path": "",
+            "empty_allowed": 0,
+            "required": 1,
             "test": 0
         },
         {
@@ -70,11 +80,13 @@
             "config_item_name": "Secondary NTP Server",
             "prompt_text": "the secondary NTP FQDN: ",
             "example_text": "time.secondary.net",
-            "verify_function": [""],
-            "format_function": [""],
+            "verify_function": ["is_domain_name"],
+            "format_function": [],
             "input_mode": "input",
             "default_value": "",
             "api_path": "",
+            "empty_allowed": 0,
+            "required": 1,
             "test": 0
         },
         {
@@ -82,11 +94,13 @@
             "config_item_name": "Username",
             "prompt_text": "username",
             "example_text": "hacker",
-            "verify_function": [""],
-            "format_function": [""],
+            "verify_function": ["is_valid_username"],
+            "format_function": [],
             "input_mode": "input",
             "default_value": "",
             "api_path": "",
+            "empty_allowed": 0,
+            "required": 1,
             "test": 0
         },
         {
@@ -94,11 +108,13 @@
             "config_item_name": "Password",
             "prompt_text": "password",
             "example_text": "l337+C0d3r$",
-            "verify_function": [""],
-            "format_function": [""],
+            "verify_function": ["is_between", 1, 300],
+            "format_function": [],
             "input_mode": "getpass",
             "default_value": "",
             "api_path": "",
+            "empty_allowed": 0,
+            "required": 1,
             "test": 0
         }
     ],
@@ -107,7 +123,7 @@
         {
             "config-item": "location",
             "config-item-name": "Rack Location",
-            "format_function": [ "get_location", "row", "rack", "pdu_letter" ],
+            "format_function": [ "get_location_string", "row", "rack", "pdu_letter" ],
             "api_path": "",
             "test": 0
         }

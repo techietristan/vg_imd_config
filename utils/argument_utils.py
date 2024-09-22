@@ -11,7 +11,7 @@ def parse_args(system_arguments: list[str]):
     parser.add_argument('-f', '--get_firmware_version', help='Get the firmware version of the currently connected IMD.', action='store_true')
     parser.add_argument('-p', '--set_password',         help='Set the username and password for the currently connected IMD.', action='store_true')
     parser.add_argument('-r', '--reset-imd',            help='Reset the currently connected IMD to factory defaults.', action='store_true')
-    parser.add_argument('-s', '--skip_firmware_check',  help='Don\'t check the current IMD firmware version.')
+    parser.add_argument('-s', '--skip_firmware_check',  help='Don\'t check the current IMD firmware version.', action = 'store_true')
     parser.add_argument('-u', '--upgrade',              help='Upgrade the firmware of the currently connected IMD.', action='store_true')
 
     return parser.parse_args()

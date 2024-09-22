@@ -144,26 +144,179 @@ class TestParseFirmwareUrl(TestCase):
     
 
 class TestVerifyInput(TestCase):
+    is_int_input_params: dict = {
+        "verify_function": ["is_int"],
+        "empty_allowed": 0
+    }
+    is_one_of_input_params: dict = {
+        "verify_function": ["is_one_of", ["a", "b"]],
+        "empty_allowed": 0
+    }
+    is_int_input_params_empty_allowed: dict = {
+        "verify_function": ["is_int"],
+        "empty_allowed": 1
+    }
+    is_one_of_input_params_empty_allowed: dict = {
+        "verify_function": ["is_one_of", ["a", "b"]],
+        "empty_allowed": 1
+    }
+    is_between_input_params: dict = {
+        "verify_function": ["is_between", 1, 300],
+        "empty_allowed": 0
+    }
+    is_hostname_input_params: dict = {
+        "verify_function": ["is_hostname"],
+        "empty_allowed": 0
+    }
+    is_domain_name_input_params: dict = {
+        "verify_function": ["is_domain_name"],
+        "empty_allowed": 0
+    }
+    is_valid_username_input_params: dict = {
+        "verify_function": ["is_valid_username"],
+        "empty_allowed": 0
+    }
+    no_verify_function_params_empty_allowed: dict = {
+        "verify_function": [],
+        "empty_allowed": 1
+    }
+    no_verify_function_params_empty_not_allowed: dict = {
+        "verify_function": [],
+        "empty_allowed": 0
+    }
+
     def test_verify_input_valid_int(self):
-        valid_result = verify_input({}, ['is_int'], '4')
+        valid_result = verify_input({}, self.is_int_input_params, '4')
         self.assertTrue(valid_result)
     def test_verify_input_invalid_int(self):
-        invalid_result = verify_input({}, ['is_int'], 'abc')
+        invalid_result = verify_input({}, self.is_int_input_params, 'abc')
         self.assertFalse(invalid_result)
     def test_verify_input_is_one_of(self):
-        valid_result = verify_input({}, ['is_one_of', ['a','b']], 'A')
+        valid_result = verify_input({}, self.is_one_of_input_params, 'A')
         self.assertTrue(valid_result)
     def test_verify_input_is_not_one_of(self):
-        invalid_result = verify_input({}, ['is_one_of', ['a','b']], 'C')
+        invalid_result = verify_input({}, self.is_one_of_input_params, 'C')
         self.assertFalse(invalid_result)
+    def test_verify_input_is_int_input_params_empty_allowed(self):
+        valid_result = verify_input({}, self.is_int_input_params_empty_allowed, '')
+        self.assertTrue(valid_result)
+    def test_verify_input_is_one_of_input_params_empty_allowed(self):
+        valid_result = verify_input({}, self.is_one_of_input_params_empty_allowed, '')
+        self.assertTrue(valid_result)
+    def test_verify_input_is_hostname(self):
+        valid_hostnames = [
+            'host-name',
+            'hostname',
+            'hostname123',
+            '123hostname',
+            'host123name',
+            '123-hostname'
+        ]
+        invalid_hostnames = [
+            'hostname_with_underscores',
+            '-hostname-starting-with-hyphen',
+            'hostname with spaces',
+            'hostname-ending-with-hyphen-',
+            'hostname-thats-just-too-damn-long-with-way-too-many-characters-to-be-considered-valid',
+            'hostname@with(invalid)Chars',
+            '',
+        ]
+        for valid_hostname in valid_hostnames:
+            self.assertTrue(verify_input({}, self.is_hostname_input_params, valid_hostname))
+        for invalid_hostname in invalid_hostnames:
+            self.assertFalse(verify_input({}, self.is_hostname_input_params, invalid_hostname))
+    def test_verify_input_is_domain_name(self):
+        valid_domain_names = [
+            'time.ntp.com',
+            'this.is.a.long.but.valid.domain.name',
+            'abc.biz',
+            'time.co.uk',
+            'google.com',
+            'www.google.com',
+            'pool.0.ntp.org',
+            'pool.1.ntp.org'
+        ]
+        invalid_domain_names = [
+            'domain with spaces',
+            'domain.that.frankly.is.more.than.the.allowed.255.characters.and.is.therefore.not.valid.' * 5,
+            'domain.name.#$%.with.invalid.chars.&*()@#$%^.fun',
+            '',
+        ]
+        for valid_domain_name in valid_domain_names:
+            self.assertTrue(verify_input({}, self.is_domain_name_input_params, valid_domain_name))
+        for invalid_domain_name in invalid_domain_names:
+            self.assertFalse(verify_input({}, self.is_domain_name_input_params, invalid_domain_name))
+    def test_verify_input_is_valid_username(self):
+        valid_usernames = [
+            'valid_username',
+            'valid_username-with-hypens123-',
+            'vALiD-UsErN4M3',
+            'username',
+            'u'
+        ]
+        invalid_usernames = [
+            'username with spaces',
+            'username_with_more_than_32_chars0',
+            '-username_starting_hyphen',
+            '_username_starting_underscore',
+            'username_with@#$%^invalid&*(chars)'
+        ]
+        for valid_username in valid_usernames:
+            self.assertTrue(verify_input({}, self.is_valid_username_input_params, valid_username))
+        for invalid_username in invalid_usernames:
+            self.assertFalse(verify_input({}, self.is_valid_username_input_params, invalid_username))
+
+    def test_is_between(self):
+        valid_inputs = [
+            ' ',
+            'abcde12345' * 30,
+            '23456&*()_fjkldsaLKJ'
+        ]
+        invalid_inputs = [
+            '',
+            'abcde12345' * 31,
+        ]
+        for valid_input in valid_inputs:
+            self.assertTrue(verify_input({}, self.is_between_input_params, valid_input))
+        for invalid_input in invalid_inputs:
+            self.assertFalse(verify_input({}, self.is_between_input_params, invalid_input))
+
+    def test_verify_input_no_verify_function_params_empty_allowed(self):
+        valid_results = [
+            'test_string',
+            'test string with spaces',
+            'm1x of numb3rs and letters',
+            '',
+            'LoWerR, UpPer, !@#$% **(Chars)'
+        ]
+        for valid_result in valid_results:
+            self.assertTrue(verify_input({}, self.no_verify_function_params_empty_allowed, valid_result))
+    def test_verify_input_no_verify_function_params_empty_not_allowed(self):
+        valid_results = [
+            'test_string',
+            'test string with spaces'
+            'm1x of numb3rs and letters',
+            'LoWerR, UpPer, !@#$% **(Chars)'
+        ]
+        invalid_result = ''
+        for valid_result in valid_results:
+            self.assertTrue(verify_input({}, self.no_verify_function_params_empty_not_allowed, valid_result))
+        self.assertFalse(verify_input({}, self.no_verify_function_params_empty_not_allowed, invalid_result))
 
 class TestFormatUserInput(TestCase):
     def test_format_user_input_none(self):
-        formatted_user_input = format_user_input({}, [], 'test_input ')
+        test_prompt = {'format_function': [], 'empty_allowed': 0}
+        formatted_user_input = format_user_input({}, test_prompt, 'test_input ')
         self.assertEqual(formatted_user_input, 'test_input')
     def test_format_user_input_zfill(self):
-        formatted_user_input = format_user_input({}, ['zfill', 2], '7 ')
+        test_prompt = {'format_function': ['zfill', 2], 'empty_allowed': 0}
+        formatted_user_input = format_user_input({}, test_prompt, '7 ')
         self.assertEqual(formatted_user_input, '07')
     def test_format_user_input_lower(self):
-        formatted_user_input = format_user_input({}, ['lower'], 'TEST INPUT ')
-        self.assertEqual(formatted_user_input, 'test input')  
+        test_prompt = {'format_function': ['lower'], 'empty_allowed': 0}
+        formatted_user_input = format_user_input({}, test_prompt, 'TEST INPUT ')
+        self.assertEqual(formatted_user_input, 'test input')
+    def test_format_user_input_upper(self):
+        test_prompt = {'format_function': ['upper'], 'empty_allowed': 0}
+        formatted_user_input = format_user_input({}, test_prompt, 'test input ')
+        self.assertEqual(formatted_user_input, 'TEST INPUT')  

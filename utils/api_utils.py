@@ -2,7 +2,7 @@ import json, requests, sys, time, urllib3
 from halo import Halo
 
 from utils.firmware_utils import get_firmware_file_path
-from utils.format_utils import print_red
+from utils.format_utils import format_red
 from utils.parse_utils import is_vaild_firmware_version
 from utils.prompt_utils import confirm, get_credentials
 
@@ -161,13 +161,13 @@ def upgrade_imd_firmware(config: dict, quiet: bool = True) -> dict | bool:
                     if response['retCode'] == 0:
                         if not quiet: print('Firmware upgraded successfully!')
                     else:
-                        print_red(f'IMD Error: {response}.')
+                        print(format_red(f'IMD Error: {response}.'))
                     return response
                 except Exception as error:
-                    print_red(f'\nError upgrading IMD firmware: {error}')
+                    print(format_red(f'\nError upgrading IMD firmware: {error}'))
                     if confirm('\nDo you want to try again (y or n): '):
                         upgrade_firmware(config)
 
             return upgrade_firmware(config)
         else:
-            print_red('Unable to find or download firmware. Please check your configuration.')
+            print(format_red('Unable to find or download firmware. Please check your configuration.'))

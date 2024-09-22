@@ -75,29 +75,45 @@ def parse_firmware_url(config: dict, url: str) -> dict | bool:
     except (IndexError, TypeError):
         return False
 
-def verify_input(config: dict, verify_function: list, user_input: str) -> bool:
-    if bool(verify_function):
+def verify_input(config: dict, input_params: dict, user_input: str) -> bool:
+    verify_function: list = input_params['verify_function']
+    empty_allowed: bool = bool(input_params['empty_allowed'])
+    stripped_user_input = user_input.strip()
+    if user_input == '':
+        return True if empty_allowed else False
+    elif bool(verify_function):
         match verify_function[0]:
             case 'is_int':
                 try:
-                    is_valid_input = type(int(user_input.strip())) == int
+                    return bool(type(int(stripped_user_input)) == int)
                 except ValueError:
-                    is_valid_input = False
+                    return False
             case 'is_one_of':
-                is_valid_input = user_input.strip().lower() in verify_function[1]
+                return bool(stripped_user_input.lower() in verify_function[1])
+            case 'is_between':
+                return bool(int(verify_function[1]) <= len(user_input) <= int(verify_function[2]))
+            case 'is_hostname':
+                return validators.hostname(stripped_user_input)
+            case 'is_domain_name':
+                return validators.domain(stripped_user_input)
+            case 'is_valid_username':
+                return bool(re.fullmatch(r'[a-zA-Z][a-zA-Z0-9-_]{0,31}', stripped_user_input))
     else:
-        is_valid_input = True
-    
-    return is_valid_input
+        return True
 
-def format_user_input(config: dict, format_function: dict, user_input: str) -> str:
+
+def format_user_input(config: dict, input_params: dict, user_input: str) -> str:
+    format_function: list = input_params['format_function']
+    stripped_user_input = user_input.strip()
     if bool(format_function):
-            match format_function[0]:
-                case 'zfill':
-                    formatted_user_input = user_input.strip().zfill(format_function[1])
-                case 'lower':
-                    formatted_user_input = user_input.strip().lower()
+        match format_function[0]:
+            case 'zfill':
+                formatted_user_input = stripped_user_input.zfill(format_function[1])
+            case 'lower':
+                formatted_user_input = stripped_user_input.lower()
+            case 'upper':
+                formatted_user_input = stripped_user_input.upper()
     else:
-        formatted_user_input = user_input.strip()
+        formatted_user_input = stripped_user_input
     
     return formatted_user_input

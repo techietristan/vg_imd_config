@@ -79,6 +79,9 @@ class TestGetInput(TestCase):
     def test_get_input_none(self):
         test_input = utils.prompt_utils.get_input(config = {}, input_type = 'none', simulated_user_input = 'test_input' )
         self.assertEqual(test_input, 'test_input')
+    def test_get_input_none_with_default(self):
+        test_input = utils.prompt_utils.get_input(config = {}, input_type = 'none', default_value = 'default_value', simulated_user_input = '' )
+        self.assertEqual(test_input, 'default_value')
 
 class TestGetPromptFunction(TestCase):
     def test_get_prompt_function_zfill(self):
@@ -92,6 +95,8 @@ class TestGetPromptFunction(TestCase):
             "input_mode": "input",
             "default_value": "",
             "api_path": "",
+            "empty_allowed": 0,
+            "required": 1,
             "test": 1
         }
         expected_return_dict = {
@@ -100,7 +105,7 @@ class TestGetPromptFunction(TestCase):
             "value": "07",
             "test": 1
         }  
-        returned_function = utils.prompt_utils.get_prompt_function({}, input_params)
+        returned_function = utils.prompt_utils.get_prompt_function({}, input_params, quiet = True)
         self.assertDictEqual(returned_function({}, '7'), expected_return_dict)
 
     def test_get_prompt_function_lower(self):
@@ -114,6 +119,8 @@ class TestGetPromptFunction(TestCase):
             "input_mode": "input",
             "default_value": "",
             "api_path": "",
+            "empty_allowed": 0,
+            "required": 1,
             "test": 1
         }
         expected_return_dict = {
@@ -122,7 +129,7 @@ class TestGetPromptFunction(TestCase):
             "value": "b",
             "test": 1
         }  
-        returned_function = utils.prompt_utils.get_prompt_function({}, input_params)
+        returned_function = utils.prompt_utils.get_prompt_function({}, input_params, quiet = True)
         self.assertDictEqual(returned_function({}, 'B'), expected_return_dict)
 
     def test_get_prompt_function_valid_input(self):
@@ -136,9 +143,11 @@ class TestGetPromptFunction(TestCase):
             "input_mode": "input",
             "default_value": "",
             "api_path": "",
+            "empty_allowed": 0,
+            "required": 1,
             "test": 0
         }
-        returned_function = utils.prompt_utils.get_prompt_function({}, input_params)
+        returned_function = utils.prompt_utils.get_prompt_function({}, input_params, quiet = True)
         self.assertTrue(callable(returned_function))
 
     def test_get_prompt_function_missing_keys(self):
@@ -150,7 +159,9 @@ class TestGetPromptFunction(TestCase):
             "verify_function": ["is_int"],
             "format_function": ["zfill", 2],
             "api_path": "",
+            "empty_allowed": 0,
+            "required": 1,
             "test": 1
         }
-        returned_function = utils.prompt_utils.get_prompt_function({}, input_params)
+        returned_function = utils.prompt_utils.get_prompt_function({}, input_params, quiet = True)
         self.assertFalse(returned_function)
