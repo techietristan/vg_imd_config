@@ -1,5 +1,7 @@
 import re, validators
 
+from utils.format_utils import format_red
+
 def is_valid(config: dict, regex: str, string: str): 
     if type(string) != str:
         return False
@@ -75,47 +77,66 @@ def parse_firmware_url(config: dict, url: str) -> dict | bool:
     except (IndexError, TypeError):
         return False
 
-def verify_input(config: dict, input_params: dict, user_input: str) -> bool:
-    verify_function: list = input_params['verify_function']
-    empty_allowed: bool = bool(input_params['empty_allowed'])
+def run_verify_function(config: dict, user_input: str, verify_function: list) -> bool:
     stripped_user_input = user_input.strip()
+    match verify_function[0]:
+        case 'is_int':
+            try:
+                return bool(type(int(stripped_user_input)) == int)
+            except ValueError:
+                return False
+        case 'is_one_of':
+            return bool(stripped_user_input.lower() in verify_function[1])
+        case 'is_between':
+            return bool(int(verify_function[1]) <= len(user_input) <= int(verify_function[2]))
+        case 'is_hostname':
+            return bool(validators.hostname(stripped_user_input))
+        case 'is_domain_name':
+            return bool(validators.domain(stripped_user_input))
+        case 'is_valid_username':
+            return bool(re.fullmatch(r'[a-zA-Z][a-zA-Z0-9-_]{0,31}', stripped_user_input))
+
+def verify_input(config: dict, input_params: dict, user_input: str) -> bool:
+    verify_functions: list[list] = input_params['verify_functions']
+    empty_allowed: bool = bool(input_params['empty_allowed'])
     if user_input == '':
         return True if empty_allowed else False
-    elif bool(verify_function):
-        match verify_function[0]:
-            case 'is_int':
-                try:
-                    return bool(type(int(stripped_user_input)) == int)
-                except ValueError:
-                    return False
-            case 'is_one_of':
-                return bool(stripped_user_input.lower() in verify_function[1])
-            case 'is_between':
-                return bool(int(verify_function[1]) <= len(user_input) <= int(verify_function[2]))
-            case 'is_hostname':
-                return validators.hostname(stripped_user_input)
-            case 'is_domain_name':
-                return validators.domain(stripped_user_input)
-            case 'is_valid_username':
-                return bool(re.fullmatch(r'[a-zA-Z][a-zA-Z0-9-_]{0,31}', stripped_user_input))
+    elif bool(verify_functions[0]):
+        verify_function_results: list[bool] = [
+            run_verify_function(config, user_input, verify_function)
+            for verify_function in verify_functions
+        ]
+        return all(verify_function_results)
     else:
         return True
 
+def apply_user_input_formatting_function(config: dict, format_function: list, current_formatting: str):
+    match format_function[0]:
+        case 'zfill':
+            return current_formatting.zfill(format_function[1])
+        case 'lower':
+            return current_formatting.lower()
+        case 'upper':
+            return current_formatting.upper()
+
+def apply_user_input_formatting_functions(config: dict, format_functions: list[list], next_formatting: str, iteration = 0) -> str:
+    number_of_format_functions: int = len(format_functions)
+    try:
+        if iteration + 1 == number_of_format_functions:
+            return apply_user_input_formatting_function(config, format_functions[iteration], next_formatting)
+        else:
+            next_formatting = apply_user_input_formatting_function(config, format_functions[iteration], next_formatting)
+            return apply_user_input_formatting_functions(config, format_functions, next_formatting, iteration + 1)
+    except IndexError:
+        return next_formatting
+
 def format_user_input(config: dict, input_params: dict, user_input: str) -> str:
-    format_function: list = input_params['format_function']
+    format_functions: list[list] = input_params['format_functions']
     stripped_user_input = user_input.strip()
-    if bool(format_function):
-        match format_function[0]:
-            case 'zfill':
-                formatted_user_input = stripped_user_input.zfill(format_function[1])
-            case 'lower':
-                formatted_user_input = stripped_user_input.lower()
-            case 'upper':
-                formatted_user_input = stripped_user_input.upper()
+    if bool(format_functions[0]):
+        return apply_user_input_formatting_functions(config, format_functions, stripped_user_input)
     else:
-        formatted_user_input = stripped_user_input
-    
-    return formatted_user_input
+        return stripped_user_input
 
 def apply_format_function(config: dict, format_function: list, parsed_prompt_responses: dict) -> str:
     match format_function[0]:

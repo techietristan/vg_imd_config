@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from utils.parse_utils import is_vaild_firmware_version, is_valid_hostname, get_next_in_sequence, guess_next_hostname, parse_firmware_url, verify_input, format_user_input, apply_format_function
+from utils.parse_utils import apply_user_input_formatting_function, is_vaild_firmware_version, is_valid_hostname, get_next_in_sequence, guess_next_hostname, parse_firmware_url, verify_input, format_user_input, apply_format_function
 test_config: dict = {
     "hostname_format": {
         "hostname_regex": "(.+)([a,b,A,B])(\\d)$",
@@ -145,43 +145,43 @@ class TestParseFirmwareUrl(TestCase):
 
 class TestVerifyInput(TestCase):
     is_int_input_params: dict = {
-        "verify_function": ["is_int"],
+        "verify_functions": [["is_int"]],
         "empty_allowed": 0
     }
     is_one_of_input_params: dict = {
-        "verify_function": ["is_one_of", ["a", "b"]],
+        "verify_functions": [["is_one_of", ["a", "b"]]],
         "empty_allowed": 0
     }
     is_int_input_params_empty_allowed: dict = {
-        "verify_function": ["is_int"],
+        "verify_functions": [["is_int"]],
         "empty_allowed": 1
     }
     is_one_of_input_params_empty_allowed: dict = {
-        "verify_function": ["is_one_of", ["a", "b"]],
+        "verify_functions": [["is_one_of", ["a", "b"]]],
         "empty_allowed": 1
     }
     is_between_input_params: dict = {
-        "verify_function": ["is_between", 1, 300],
+        "verify_functions": [["is_between", 1, 300]],
         "empty_allowed": 0
     }
     is_hostname_input_params: dict = {
-        "verify_function": ["is_hostname"],
+        "verify_functions": [["is_hostname"]],
         "empty_allowed": 0
     }
     is_domain_name_input_params: dict = {
-        "verify_function": ["is_domain_name"],
+        "verify_functions": [["is_domain_name"]],
         "empty_allowed": 0
     }
     is_valid_username_input_params: dict = {
-        "verify_function": ["is_valid_username"],
+        "verify_functions": [["is_valid_username"]],
         "empty_allowed": 0
     }
     no_verify_function_params_empty_allowed: dict = {
-        "verify_function": [],
+        "verify_functions": [[]],
         "empty_allowed": 1
     }
     no_verify_function_params_empty_not_allowed: dict = {
-        "verify_function": [],
+        "verify_functions": [[]],
         "empty_allowed": 0
     }
 
@@ -303,23 +303,52 @@ class TestVerifyInput(TestCase):
             self.assertTrue(verify_input({}, self.no_verify_function_params_empty_not_allowed, valid_result))
         self.assertFalse(verify_input({}, self.no_verify_function_params_empty_not_allowed, invalid_result))
 
+class TestApplyUserInputFormattingFunction(TestCase):
+    def test_apply_user_input_formatting_function_zfill(self):
+        self.assertEqual('test', 'test')
+        formatting_function_result = apply_user_input_formatting_function({}, ['zfill', 6], 'abc')
+        self.assertEqual('000abc', formatting_function_result)
+    def test_apply_user_input_formatting_function_lower(self):
+        formatting_function_result = apply_user_input_formatting_function({}, ['upper'], 'test string')
+        self.assertEqual('TEST STRING', formatting_function_result)
+    def test_apply_user_input_formatting_function_upper(self):
+        formatting_function_result = apply_user_input_formatting_function({}, ['lower'], 'TEST STRING')
+        self.assertEqual('test string', formatting_function_result)
+
 class TestFormatUserInput(TestCase):
     def test_format_user_input_none(self):
-        test_prompt = {'format_function': [], 'empty_allowed': 0}
+        test_prompt = {'format_functions': [[]], 'empty_allowed': 0}
         formatted_user_input = format_user_input({}, test_prompt, 'test_input ')
         self.assertEqual(formatted_user_input, 'test_input')
     def test_format_user_input_zfill(self):
-        test_prompt = {'format_function': ['zfill', 2], 'empty_allowed': 0}
+        test_prompt = {'format_functions': [['zfill', 2]], 'empty_allowed': 0}
         formatted_user_input = format_user_input({}, test_prompt, '7 ')
         self.assertEqual(formatted_user_input, '07')
     def test_format_user_input_lower(self):
-        test_prompt = {'format_function': ['lower'], 'empty_allowed': 0}
+        test_prompt = {'format_functions': [['lower']], 'empty_allowed': 0}
         formatted_user_input = format_user_input({}, test_prompt, 'TEST INPUT ')
         self.assertEqual(formatted_user_input, 'test input')
     def test_format_user_input_upper(self):
-        test_prompt = {'format_function': ['upper'], 'empty_allowed': 0}
+        test_prompt = {'format_functions': [['upper']], 'empty_allowed': 0}
         formatted_user_input = format_user_input({}, test_prompt, 'test input ')
-        self.assertEqual(formatted_user_input, 'TEST INPUT')  
+        self.assertEqual(formatted_user_input, 'TEST INPUT')
+    def test_format_user_input_zfill_upper(self):
+        test_prompt = {'format_functions': [['zfill', 6], ['upper']], 'empty_allowed': 0}
+        formatted_user_input = format_user_input({}, test_prompt, 'abc ')
+        self.assertEqual(formatted_user_input, '000ABC')
+    def test_format_user_input_zfill_lower(self):
+        test_prompt = {'format_functions': [['zfill', 6], ['lower']], 'empty_allowed': 0}
+        formatted_user_input = format_user_input({}, test_prompt, ' ABC')
+        self.assertEqual(formatted_user_input, '000abc')  
+    def test_format_user_input_upper_zfill(self):
+        test_prompt = {'format_functions': [['upper'], ['zfill', 6]], 'empty_allowed': 0}
+        formatted_user_input = format_user_input({}, test_prompt, 'abc ')
+        self.assertEqual(formatted_user_input, '000ABC')
+    def test_format_user_input_lower_zfill(self):
+        test_prompt = {'format_functions': [['lower'], ['zfill', 6]], 'empty_allowed': 0}
+        formatted_user_input = format_user_input({}, test_prompt, ' ABC')
+        self.assertEqual(formatted_user_input, '000abc')  
+
 
 class TestApplyFormatFunction(TestCase):
     test_formatter: dict = {
