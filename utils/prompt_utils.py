@@ -11,9 +11,9 @@ def confirm(config: dict = {}, confirm_prompt: str = '', error = False) -> bool:
     negative_responses = ['no', 'n']
     response_is_positive: bool = user_response in affirmative_responses
     response_is_negative: bool = user_response in negative_responses
-    invalid_response_prompt: str = 'Invlaid response, please enter \'y\' or \'n\': '
+    invalid_response_prompt: str = format_red('Invlaid response, please enter \'y\' or \'n\': ')
 
-    return True if response_is_positive else False if response_is_negative else confirm(invalid_response_prompt)
+    return True if response_is_positive else False if response_is_negative else confirm(config = config, confirm_prompt = invalid_response_prompt)
 
 def get_username(config: dict) -> str:
     return input('Please enter the username: ').strip()
@@ -52,20 +52,42 @@ def get_input(config: dict, input_type: str = 'input', formatted_prompt_text: st
             user_input = get_password(config = config, quiet = False)
         case 'none':
             user_input = simulated_user_input
-        
     if user_input.strip() == '' and bool(default_value):
         return default_value
-
     return user_input
 
+def validate_selection(options: list) -> int:
+    selection: str = get_input({}).strip()
+    number_of_options: int = len(options)
+    try:
+        selection_int: int = int(selection) - 1
+    except ValueError:
+        print(format_red(f'Invalid input: {selection}.'))
+        return validate_selection(options, selection)
+    if not 0 <= selection_int < number_of_options:
+        print(format_red(f'Please enter a number between 1 and {number_of_options}.'))
+        return validate_selection(options)
+    return selection_int
+
+def enumerate_options(config: dict, options: list[str], prompt: str = '', quiet = False) -> str:
+    default_prompt: str = 'Please select from the following options:'
+    prompt_text: str = prompt if bool(prompt) else default_prompt
+    if bool(prompt) and not quiet:
+        print(format_bold(prompt_text))
+    for index, option in enumerate(options):
+        print(f'{index + 1}. {option}')
+    selection_index: int = validate_selection(options)
+    return options[selection_index]
+       
 def get_prompt_function(config: dict, input_params: dict, quiet = False):
     try:
         config_item =       input_params['config_item']
+        config_item_name =  input_params['config_item_name']
         input_mode =        input_params['input_mode']
         prompt_text =       input_params['prompt_text']
         example_text =      input_params['example_text']
         default_value =     input_params['default_value']
-        api_path =          input_params['api_path']
+        api_paths =         input_params['api_paths']
         test =              input_params['test']
     except KeyError as error:
         if not quiet:
@@ -88,7 +110,8 @@ def get_prompt_function(config: dict, input_params: dict, quiet = False):
             return prompt_function(config = config, simulated_user_input = simulated_user_input)
         return {
             "config_item": config_item,
-            "api_path": api_path,
+            "config_item_name": config_item_name,
+            "api_paths": api_paths,
             "value": formatted_user_input,
             "test": test
         }
@@ -108,5 +131,4 @@ def get_next_imd_config(config: dict = {}, prompts_file_path: str = 'config/defa
         next_imd_config: list = [
             config_item(config = config) for config_item in imd_config_functions 
         ]
-    
     return next_imd_config

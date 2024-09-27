@@ -94,14 +94,15 @@ class TestGetPromptFunction(TestCase):
             "format_functions": [["zfill", 2]],
             "input_mode": "input",
             "default_value": "",
-            "api_path": "",
+            "api_paths": [""],
             "empty_allowed": 0,
             "required": 1,
             "test": 1
         }
         expected_return_dict = {
             "config_item": "row",
-            "api_path": "",
+            "config_item_name": "Rack Row",
+            "api_paths": [""],
             "value": "07",
             "test": 1
         }  
@@ -118,14 +119,15 @@ class TestGetPromptFunction(TestCase):
             "format_functions": [["lower"]],
             "input_mode": "input",
             "default_value": "",
-            "api_path": "",
+            "api_paths": [""],
             "empty_allowed": 0,
             "required": 1,
             "test": 1
         }
         expected_return_dict = {
             "config_item": "pdu_letter",
-            "api_path": "",
+            "config_item_name": "PDU Letter",
+            "api_paths": [""],
             "value": "b",
             "test": 1
         }  
@@ -142,7 +144,7 @@ class TestGetPromptFunction(TestCase):
             "format_functions": [["zfill", 2]],
             "input_mode": "input",
             "default_value": "",
-            "api_path": "",
+            "api_paths": [""],
             "empty_allowed": 0,
             "required": 1,
             "test": 0
@@ -158,7 +160,7 @@ class TestGetPromptFunction(TestCase):
             "example_text": "7",
             "verify_functions": [["is_int"]],
             "format_functions": [["zfill", 2]],
-            "api_path": "",
+            "api_paths": [""],
             "empty_allowed": 0,
             "required": 1,
             "test": 1

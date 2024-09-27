@@ -8,7 +8,7 @@ class TestGetConfig(unittest.TestCase):
         def __init__(self, **kwargs):
             self.__dict__.update(kwargs)
     
-    args = Namespace(imd_ip_address = None, config_file = 'default.json')
+    args = Namespace(imd_ip_address = None, config_file = 'default_config.json', prompts_file = 'default_prompts.json')
     
     def test_get_config_returns_dict(self):
         self.assertEqual(type(get_config('./', self.args)), dict)

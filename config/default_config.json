@@ -11,6 +11,5 @@
         "hostname_regex": "(.+)([a,b,A,B])(\\d)$",
         "variable_group_index": 1,
         "sequence": ["a", "b"]
-    },
-    "interactive_prompts_file": "default_prompts.json"
+    }
 }

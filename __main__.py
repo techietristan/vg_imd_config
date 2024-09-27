@@ -6,10 +6,10 @@ from utils.config_utils import get_config
 from utils.prompt_utils import get_next_imd_config
 
 def main():
-    args = parse_args(sys.argv)
-    config = get_config(main_file = __file__, args = args)
-
     try:
+        args = parse_args(sys.argv)
+        config = get_config(main_file = __file__, args = args, quiet = True)
+
         if args.get_firmware_version:
             get_firmware_version(config = config, print_result = True)
             sys.exit(0)
@@ -24,8 +24,7 @@ def main():
             upgrade_imd_firmware(config = config, quiet = False)
 
         if not any (bool(value) for value in vars(args).values()):
-            next_imd_conf = get_next_imd_config(config)
-            print(next_imd_conf)
+            print(config)
 
     except KeyboardInterrupt:
         print('\nKeyboard Interrupt Received. Exiting Script')
