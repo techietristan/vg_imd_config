@@ -2,7 +2,7 @@ import json, os
 
 from utils.parse_utils import parse_firmware_url
 
-def get_config(main_file: str, args: list):
+def get_config(main_file: str, args: list) -> dict:
     config_filename: str = args.config_file if bool(args.config_file) else 'default.json'
     script_path: str = os.path.dirname(main_file)
     json_file_path: str = f'{script_path}/config/{config_filename}'

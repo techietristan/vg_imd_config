@@ -9,13 +9,11 @@ from utils.prompt_utils import confirm, get_credentials
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 def get_firmware_version(config: dict, print_result: bool = False) -> str:
-
     spinner = Halo(text = 'Checking current IMD firmware version...\n', spinner = 'dots')
     
     api_url: str = config['api_base_url']
     api_firmware_url: str= f'{api_url}sys/version'
     headers: dict = config['headers']
-
     try:
         spinner.start()
         firmware_response: dict = requests.get(api_firmware_url, headers = headers, verify = False).json()
@@ -36,6 +34,37 @@ def get_firmware_version(config: dict, print_result: bool = False) -> str:
         if confirm(confirm_prompt = 'Do you want to try again?: '):
             return get_firmware_version(config = config, print_result = print_result)
 
+def make_api_call(
+    config: dict,
+    url: str, 
+    headers: dict, 
+    json_payload: dict, 
+    action: str = 'post', 
+    quiet: bool = False) -> str | dict | bool:
+
+    spinner = Halo(text = f'{status_msg}\n', spinner = 'dots')
+    try:
+        spinner.start()
+        match action:
+            case 'get':
+                request = requests.get(url, headers = headers, verify = False)
+            case 'post':
+                request = requests.post(url, headers = headers, json = json_payload, verify = False)
+        response = json.loads(request.text)
+        if not quiet: print(response)
+        if response['retCode'] == 0:
+            if not quiet: spinner.succeed(success_msg)
+        else:
+            spinner.fail(f'IMD Error: {response['retMsg']}.')
+        return response
+    except requests.exceptions.ConnectionError as error:
+        spinner.fail(f'Error while interacting with IMD: {error}.')
+        if confirm('Do you want to try again? (y or n): '):
+            make_api_call(config)
+    except Exception as error:
+        if not quiet: spinner.fail(f'Function \'{function_name}\' error: \'{error}\'')
+        return False
+
 def interact_with_imd(
     config: dict, 
     api_endpoint: str, 
@@ -47,36 +76,18 @@ def interact_with_imd(
     quiet: bool = True, 
     function_name: str = '', 
     status_msg: str = '', 
-    success_msg: str = '') -> dict | bool:
+    success_msg: str = '') -> str | dict | bool:
 
     headers = config['headers']
     api_base_url = config['api_base_url']
     url = f'{api_base_url}{api_endpoint}'
-    spinner = Halo(text = f'{status_msg}\n', spinner = 'dots')
 
-    def make_api_call(config):
-        try:
-            spinner.start()
-            match action:
-                case 'get':
-                    request = requests.get(url, headers = headers, verify = False)
-                case 'post':
-                    request = requests.post(url, headers = headers, json = json_payload, verify = False)
-            response = json.loads(request.text)
-            if not quiet: print(response)
-            if response['retCode'] == 0:
-                if not quiet: spinner.succeed(success_msg)
-            else:
-                spinner.fail(f'IMD Error: {response['retMsg']}.')
-            return response
-        except requests.exceptions.ConnectionError as error:
-            spinner.fail(f'Error while interacting with IMD: {error}.')
-            if confirm('Do you want to try again? (y or n): '):
-                make_api_call(config)
-        except Exception as error:
-            if not quiet: spinner.fail(f'Function \'{function_name}\' error: \'{error}\'')
-            return False
-    return make_api_call(config)
+    return make_api_call(config = config,
+    url = url, 
+    headers = headers, 
+    json_payload = json_payload, 
+    action = action, 
+    quiet = quiet)
 
 def set_imd_creds(config: dict, quiet: bool = True) -> dict | bool:
     username, password = get_credentials(config)

@@ -83,7 +83,8 @@ def get_prompt_function(config: dict, input_params: dict, quiet = False):
         if not is_valid_input:
             clear_line()
             if not quiet:
-                print(format_red(f'Invalid Input:\'{user_input}\''))
+                invalid_input_warning: str = 'Invalid Password.' if input_type == 'getpass' else f'Invalid Input:\'{user_input}\''
+                print(format_red(invalid_input_warning))
             return prompt_function(config = config, simulated_user_input = simulated_user_input)
         return {
             "config_item": config_item,
