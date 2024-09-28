@@ -35,10 +35,8 @@ def get_filename(file_type:str, config_files_path: str, quiet = False) -> str | 
     return config_filename
 
 def get_config(main_file: str, args: list, quiet = True) -> dict:
-    
     script_path: str = os.path.dirname(main_file)
     config_files_path: str = os.path.join(script_path, 'config')
-
     config_filename: str = args.config_file if bool(args.config_file) else get_filename('config', config_files_path = config_files_path, quiet = quiet)
     prompts_filename: str = args.prompts_file if bool (args.prompts_file) else get_filename('prompts', config_files_path = config_files_path, quiet = quiet)
     if bool(config_filename):
