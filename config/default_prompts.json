@@ -60,8 +60,10 @@
             "default_value": "",
             "input_mode": "input",
             "unique_value": 1,
-            "api_paths": [""],
+            "api_paths": ["conf/system/"],
+            "http_method": "post",
             "cmd": "set",
+            "json": {"hostname": "{imd_hostname}"},
             "empty_allowed": 0,
             "required": 1,
             "test": 0
@@ -144,6 +146,9 @@
             "config-item-name": "Rack Location",
             "api_paths": ["conf/contact"],
             "post_keys": ["description"],
+            "http_method": "post",
+            "cmd": "set",
+            "json": {"description": "{location}"},
             "format_functions": [[ "apply_template", "R{row}-{rack}/{pdu_letter}", ["row", "rack", "pdu_letter"]]],
             "test": 0
         }
