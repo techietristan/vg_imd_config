@@ -6,31 +6,35 @@ from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
 encoding_format: str = 'utf-8'
 
-def calculate_key(salt: bytes, passphrase: str):
+def calculate_key(config: dict, salt: bytes, passphrase: str) -> Fernet:
+    iterations: int = config['encryption_iterations'] if 'encryption_iterations' in config.keys() else 4096
     key_derivation_function: callable = PBKDF2HMAC(
         algorithm =     hashes.SHA256(),
         length =        32,
         salt =          salt,
-        iterations =    64 #16777216,
+        iterations =    iterations  
     )
     encoded_passphrase: bytes = passphrase.encode(encoding_format)
     base64_key: bytes = base64.urlsafe_b64encode(key_derivation_function.derive(encoded_passphrase))
     encryption_key: cryptography.fernet.Fernet = Fernet(base64_key)
-    
+
     return encryption_key
 
-def encrypt(passphrase: str, text_to_encrypt: str) -> tuple[bytes, bytes]:
+def encrypt(config: dict, passphrase: str, text_to_encrypt: str, salt: bytes = b'') -> tuple[bytes, bytes]:
     encoded_passphrase: bytes = passphrase.encode(encoding_format)
-    salt: bytes = os.urandom(16)
-    encryption_key = calculate_key(salt, passphrase)
+    salt: bytes = salt if bool(salt) else os.urandom(16)
+    encryption_key = calculate_key(config, salt, passphrase)
     encrypted_text: bytes = encryption_key.encrypt(text_to_encrypt.encode(encoding_format))
 
     return salt, encrypted_text
 
-def decrypt(salt: bytes, encrypted_text: bytes, passphrase: str) -> bytes | bool:
+def decrypt(config: dict, salt: bytes, encrypted_text: bytes, passphrase: str) -> str | bool:
     try:
-        decryption_key = calculate_key(salt, decrypt_passphrase)
-        decrypted_text = decryption_key.decrypt(encrypted_text).decode(encoding_format)
+        decryption_key: Fernet = calculate_key(config, salt, passphrase)
+        decrypted_text: str = decryption_key.decrypt(encrypted_text).decode(encoding_format)
+
         return decrypted_text
-    except InvalidToken:
+
+    except InvalidToken as token_error:
+        
         return False

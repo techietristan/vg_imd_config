@@ -2,7 +2,7 @@ import json, os, shutil, sys
 
 from utils.format_utils import format_red
 from utils.parse_utils import parse_firmware_url
-from utils.prompt_utils import confirm, enumerate_options
+from utils.prompt_utils import confirm, enumerate_options, get_input
 
 def get_filename(file_type:str, config_files_path: str, quiet = False) -> str | bool:
     default_config_filename: str = f'default_{file_type}.json'
@@ -63,3 +63,27 @@ def get_config(main_file: str, args: list, quiet = True) -> dict:
             }
 
         return finished_config
+
+def get_prompt_default(config: dict, prompt: dict, input: str = '') -> dict:
+    pass
+
+def get_prompt_defaults(config: dict, promts_filename: str) -> None:
+
+    if confirm(f'Do you want to set defaults for {promts_filename}? '):
+        prompts_object: dict = json.load(promts_filename)
+        prompts: list = prompts_object['prompts']
+        
+
+
+def get_input_delete_me(config: dict, input_type: str = 'input', formatted_prompt_text: str = '', default_value: str = '', simulated_user_input: str | bool = None):
+    match input_type:
+        case 'input':
+            user_input = input(formatted_prompt_text)      
+        case 'getpass':
+            user_input = get_password(config = config, quiet = False)
+        case 'none':
+            user_input = simulated_user_input
+    if user_input.strip() == '' and bool(default_value):
+        return default_value
+    return user_input
+
