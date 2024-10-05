@@ -1,5 +1,7 @@
 import json, os, shutil, sys
 
+from utils.dict_utils import get_value_if_key_exists
+from utils.encryption_utils import encrypt
 from utils.format_utils import format_red
 from utils.parse_utils import parse_firmware_url
 from utils.prompt_utils import confirm, enumerate_options, get_input
@@ -64,26 +66,29 @@ def get_config(main_file: str, args: list, quiet = True) -> dict:
 
         return finished_config
 
-def get_prompt_default(config: dict, prompt: dict, input: str = '') -> dict:
-    pass
+def get_prompt_with_default(config: dict, prompt: dict, encryption_passphrase = '', salt = b'', simulated_user_input: str = '') -> dict:
+    is_unique_value: bool | int = get_value_if_key_exists(prompt, 'unique_value')
+    if is_unique_value is not 0:
+        return prompt
+
+    prompt_input_type: str = get_value_if_key_exists(prompt, 'input_mode')
+    input_type: str = prompt_input_type if bool(prompt_input_type) else 'input'
+    encrypt_default = bool(get_value_if_key_exists(prompt, 'encrypt_default'))
+    config_item = get_value_if_key_exists(prompt, 'prompt_text')
+    prompt_text = f'Please enter the default {config_item}: '
+    user_response = get_input(config, input_type, prompt_text, default_value = '', simulated_user_input = simulated_user_input)
+     
+    if encrypt_default:
+        encryption_salt, encrypted_text = encrypt(config, encryption_passphrase, user_response)
+        prompt_salt = salt if bool(salt) else encryption_salt
+        prompt_with_default: dict = { **prompt, "salt": prompt_salt, "default_value": encrypted_text }
+    else:
+        prompt_with_default: dict = { **prompt, "default_value": user_response }
+
+    return prompt_with_default
 
 def get_prompt_defaults(config: dict, promts_filename: str) -> None:
 
     if confirm(f'Do you want to set defaults for {promts_filename}? '):
         prompts_object: dict = json.load(promts_filename)
         prompts: list = prompts_object['prompts']
-        
-
-
-def get_input_delete_me(config: dict, input_type: str = 'input', formatted_prompt_text: str = '', default_value: str = '', simulated_user_input: str | bool = None):
-    match input_type:
-        case 'input':
-            user_input = input(formatted_prompt_text)      
-        case 'getpass':
-            user_input = get_password(config = config, quiet = False)
-        case 'none':
-            user_input = simulated_user_input
-    if user_input.strip() == '' and bool(default_value):
-        return default_value
-    return user_input
-

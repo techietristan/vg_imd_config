@@ -4,10 +4,14 @@ from cryptography.fernet import Fernet, InvalidToken
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
+from utils.dict_utils import get_value_if_key_exists
+
 encoding_format: str = 'utf-8'
 
 def calculate_key(config: dict, salt: bytes, passphrase: str) -> Fernet:
-    iterations: int = config['encryption_iterations'] if 'encryption_iterations' in config.keys() else 4096
+    iterations_in_config = get_value_if_key_exists(config, 'encryption_iterations')
+    iterations: int = iterations_in_config if bool(iterations_in_config) else 65536
+
     key_derivation_function: callable = PBKDF2HMAC(
         algorithm =     hashes.SHA256(),
         length =        32,

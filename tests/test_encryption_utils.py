@@ -3,7 +3,7 @@ from cryptography.fernet import Fernet
 
 from utils.encryption_utils import calculate_key, encrypt, decrypt
 
-test_config: dict = {'encryption_iterations': 32}
+test_config: dict = {'encryption_iterations': 64}
 test_passphrase: str = 'test_passphrase'
 test_text_to_encrypt: str = 'test_value'
 test_salt: bytes = b't?#\x869\x9b\xb39\xa1\x137\xb8P\x19e\xc2'
