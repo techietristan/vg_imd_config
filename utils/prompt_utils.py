@@ -52,9 +52,17 @@ def get_input(config: dict, input_type: str = 'input', formatted_prompt_text: st
             user_input = get_password(config = config, quiet = False)
         case 'none':
             user_input = simulated_user_input
-    if user_input.strip() == '' and bool(default_value):
-        return default_value
-    return user_input
+    if user_input.strip() == '':
+        if bool(default_value):
+            return default_value
+        else:
+            print(format_red('Empty input is not allowed. Please enter a valid value.'))
+            return get_input(config, formatted_prompt_text, default_value, simulated_user_input)
+    if bool(user_input):
+        return user_input
+    else:
+        print(format_red('Invalid input. Please enter a valid value.'))
+        return get_input(config, formatted_prompt_text, default_value, simulated_user_input)
 
 def validate_selection(options: list) -> int:
     selection: str = get_input({}).strip()

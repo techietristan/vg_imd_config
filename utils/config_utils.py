@@ -3,8 +3,74 @@ import json, os, shutil, sys
 from utils.dict_utils import get_value_if_key_exists
 from utils.encryption_utils import encrypt
 from utils.format_utils import format_red
-from utils.parse_utils import parse_firmware_url
+from utils.parse_utils import parse_firmware_url, verify_input
 from utils.prompt_utils import confirm, enumerate_options, get_input
+
+def get_encyrption_passphrase(config: dict, prompts_filename: str) -> str:
+    print(f'Encrypted defaults found in {prompts_filename}.')
+    passphrase: str = get_input(
+        config = config, 
+        input_type = 'getpass', 
+        formatted_prompt_text = f'Please enter the key to use to encrypt and decrypt these values: ')
+
+    return passphrase
+
+def get_prompt_with_default(config: dict, prompt: dict, encryption_passphrase = '', salt = b'', simulated_user_input: str = '') -> dict:
+    is_unique_value: bool | int = get_value_if_key_exists(prompt, 'unique_value')
+    if is_unique_value != 0 and type(is_unique_value) == int:
+        return prompt
+
+    prompt_input_type: str = get_value_if_key_exists(prompt, 'input_mode')
+    input_type: str = prompt_input_type if bool(prompt_input_type) else 'input'
+    encrypt_default = bool(get_value_if_key_exists(prompt, 'encrypt_default'))
+    config_item = get_value_if_key_exists(prompt, 'prompt_text')
+    prompt_text = f'Please enter the default {config_item}: '
+    user_response = get_input(config, input_type, prompt_text, default_value = '', simulated_user_input = simulated_user_input)
+    user_reponse_is_valid = bool(verify_input(config, prompt, user_response))
+
+    if not user_reponse_is_valid:
+        print(format_red(f'Invalid value for \'{config_item}\', please try again.'))
+        return get_prompt_with_default(config, prompt, encryption_passphrase, salt, simulated_user_input)
+
+    if encrypt_default:
+        encryption_salt, encrypted_text = encrypt(config, encryption_passphrase, user_response)
+        prompt_salt = salt if bool(salt) else encryption_salt
+        prompt_with_default: dict = { **prompt, "salt": prompt_salt, "default_value": encrypted_text }
+    else:
+        prompt_with_default: dict = { **prompt, "default_value": user_response }
+
+    return prompt_with_default
+
+def get_prompts_with_defaults(config: dict, prompts_filename: str, prompts_file_path: str) -> list[dict]:
+    with open(prompts_file_path, 'r') as prompts_file:
+        prompts_file_contents: dict = json.load(prompts_file)
+    prompts: list[dict] = prompts_file_contents['prompts']
+    encrypted_defaults: list[int] = [ get_value_if_key_exists(prompt, 'encrypt_value') for prompt in prompts ]
+    
+    if confirm(config, f'Do you want to set defaults for \'{prompts_filename}\'? '):
+        passphrase = get_encyrption_passphrase(config, prompts_filename) if 1 in encrypted_defaults else ''
+        prompts_with_defaults: list[dict] = [
+            get_prompt_with_default(config = config, prompt = prompt, encryption_passphrase = passphrase)
+            for prompt in prompts
+        ]
+
+        return prompts_with_defaults
+    else:
+        return prompts
+
+def update_prompts_file_with_defaults(config: dict) -> None:
+    config_files_path: str = get_value_if_key_exists(config, 'config_files_path')
+    prompts_filename = get_value_if_key_exists(config, 'interactive_prompts_filename')
+    prompts_file_path: str = os.path.join(config_files_path, prompts_filename)
+
+    if bool(prompts_filename):
+        prompts_with_defaults: list[dict] = get_prompts_with_defaults(config, prompts_filename, prompts_file_path)
+        
+        with open(prompts_file_path, 'r') as prompts_file:
+            prompts_file_contents = json.load(prompts_file)
+            updated_prompt_file_contents: dict = { **prompts_file_contents, "prompts": prompts_with_defaults}
+            
+        print(updated_prompt_file_contents)
 
 def get_filename(file_type:str, config_files_path: str, quiet = False) -> str | bool:
     default_config_filename: str = f'default_{file_type}.json'
@@ -46,9 +112,9 @@ def get_config(main_file: str, args: list, quiet = True) -> dict:
     else:
         print(format_red('Unable to load config file! Exiting script.'))
         try:
-            sys.exit(130)
+            sys.exit(1)
         except SystemExit:
-            os._exit(130)
+            os._exit(1)
 
     with open(json_file_path) as config_file:
         config: dict = json.load(config_file)
@@ -61,34 +127,12 @@ def get_config(main_file: str, args: list, quiet = True) -> dict:
             "current_imd_ip": current_imd_ip,
             "api_base_url": f'https://{current_imd_ip}/api/',
             "parsed_firmware_url": parsed_firmware_url,
-            "interactive_prompts_file": prompts_filename
+            "interactive_prompts_filename": prompts_filename,
+            "config_files_path": config_files_path
             }
 
         return finished_config
 
-def get_prompt_with_default(config: dict, prompt: dict, encryption_passphrase = '', salt = b'', simulated_user_input: str = '') -> dict:
-    is_unique_value: bool | int = get_value_if_key_exists(prompt, 'unique_value')
-    if is_unique_value is not 0:
-        return prompt
 
-    prompt_input_type: str = get_value_if_key_exists(prompt, 'input_mode')
-    input_type: str = prompt_input_type if bool(prompt_input_type) else 'input'
-    encrypt_default = bool(get_value_if_key_exists(prompt, 'encrypt_default'))
-    config_item = get_value_if_key_exists(prompt, 'prompt_text')
-    prompt_text = f'Please enter the default {config_item}: '
-    user_response = get_input(config, input_type, prompt_text, default_value = '', simulated_user_input = simulated_user_input)
-     
-    if encrypt_default:
-        encryption_salt, encrypted_text = encrypt(config, encryption_passphrase, user_response)
-        prompt_salt = salt if bool(salt) else encryption_salt
-        prompt_with_default: dict = { **prompt, "salt": prompt_salt, "default_value": encrypted_text }
-    else:
-        prompt_with_default: dict = { **prompt, "default_value": user_response }
-
-    return prompt_with_default
-
-def get_prompt_defaults(config: dict, promts_filename: str) -> None:
-
-    if confirm(f'Do you want to set defaults for {promts_filename}? '):
-        prompts_object: dict = json.load(promts_filename)
-        prompts: list = prompts_object['prompts']
+            
+        

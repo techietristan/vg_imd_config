@@ -71,7 +71,7 @@
         {
             "config_item": "primary_ntp",
             "config_item_name": "Primary NTP Server",
-            "prompt_text": "primary NTP FQDN: ",
+            "prompt_text": "primary NTP FQDN",
             "example_text": "time.primary.net",
             "verify_functions": [["is_domain_name"]],
             "format_functions": [[]],
@@ -89,7 +89,7 @@
         {
             "config_item": "secondary_ntp",
             "config_item_name": "Secondary NTP Server",
-            "prompt_text": "the secondary NTP FQDN: ",
+            "prompt_text": "the secondary NTP FQDN",
             "example_text": "time.secondary.net",
             "verify_functions": [["is_domain_name"]],
             "format_functions": [[]],
