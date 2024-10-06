@@ -2,6 +2,9 @@ import re, validators
 
 from utils.format_utils import format_red
 
+def is_exactly_zero(value) -> bool:
+    return type(value) == int and value == 0
+
 def is_valid(config: dict, regex: str, string: str): 
     if type(string) != str:
         return False

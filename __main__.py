@@ -3,7 +3,9 @@ import os, sys
 from utils.api_utils import get_firmware_version, reset_imd_to_factory_defaults, set_imd_creds, upgrade_imd_firmware
 from utils.argument_utils import parse_args
 from utils.config_utils import get_config, update_prompts_file_with_defaults
+from utils.format_utils import format_yellow
 from utils.prompt_utils import get_next_imd_config
+from utils.sys_utils import exit_with_code
 
 def main():
     try:
@@ -28,11 +30,8 @@ def main():
             print(config)
 
     except KeyboardInterrupt:
-        print('\nKeyboard Interrupt Received. Exiting Script')
-        try:
-            sys.exit(130)
-        except SystemExit:
-            os._exit(130)
+        print(format_yellow('\nKeyboard Interrupt Received. Exiting Script'))
+        exit_with_code(130)
 
 
 if __name__ == "__main__":

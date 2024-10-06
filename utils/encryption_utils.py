@@ -24,18 +24,18 @@ def calculate_key(config: dict, salt: bytes, passphrase: str) -> Fernet:
 
     return encryption_key
 
-def encrypt(config: dict, passphrase: str, text_to_encrypt: str, salt: bytes = b'') -> tuple[bytes, bytes]:
+def encrypt(config: dict, passphrase: str, text_to_encrypt: str, salt: bytes = b'') -> tuple[str, str]:
     encoded_passphrase: bytes = passphrase.encode(encoding_format)
-    salt: bytes = salt if bool(salt) else os.urandom(16)
+    salt: bytes = bytes.fromhex(salt) if bool(salt) else os.urandom(16)
     encryption_key = calculate_key(config, salt, passphrase)
     encrypted_text: bytes = encryption_key.encrypt(text_to_encrypt.encode(encoding_format))
 
-    return salt, encrypted_text
+    return salt.hex(), encrypted_text.hex()
 
-def decrypt(config: dict, salt: bytes, encrypted_text: bytes, passphrase: str) -> str | bool:
+def decrypt(config: dict, salt: str, encrypted_text: str, passphrase: str) -> str | bool:
     try:
-        decryption_key: Fernet = calculate_key(config, salt, passphrase)
-        decrypted_text: str = decryption_key.decrypt(encrypted_text).decode(encoding_format)
+        decryption_key: Fernet = calculate_key(config, bytes.fromhex(salt), passphrase)
+        decrypted_text: str = decryption_key.decrypt(bytes.fromhex(encrypted_text)).decode(encoding_format)
 
         return decrypted_text
 

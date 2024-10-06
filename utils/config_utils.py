@@ -3,21 +3,23 @@ import json, os, shutil, sys
 from utils.dict_utils import get_value_if_key_exists
 from utils.encryption_utils import encrypt
 from utils.format_utils import format_red
-from utils.parse_utils import parse_firmware_url, verify_input
+from utils.parse_utils import parse_firmware_url, verify_input, is_exactly_zero
 from utils.prompt_utils import confirm, enumerate_options, get_input
+from utils.sys_utils import exit_with_code
 
 def get_encyrption_passphrase(config: dict, prompts_filename: str) -> str:
     print(f'Encrypted defaults found in {prompts_filename}.')
     passphrase: str = get_input(
         config = config, 
         input_type = 'getpass', 
-        formatted_prompt_text = f'Please enter the key to use to encrypt and decrypt these values: ')
+        formatted_prompt_text = f'Please enter the key to use for encrypting and decrypting these values: ')
 
     return passphrase
 
 def get_prompt_with_default(config: dict, prompt: dict, encryption_passphrase = '', salt = b'', simulated_user_input: str = '') -> dict:
-    is_unique_value: bool | int = get_value_if_key_exists(prompt, 'unique_value')
-    if is_unique_value != 0 and type(is_unique_value) == int:
+    unique_value: bool | int = get_value_if_key_exists(prompt, 'unique_value')
+
+    if not is_exactly_zero(unique_value):
         return prompt
 
     prompt_input_type: str = get_value_if_key_exists(prompt, 'input_mode')
@@ -25,8 +27,10 @@ def get_prompt_with_default(config: dict, prompt: dict, encryption_passphrase = 
     encrypt_default = bool(get_value_if_key_exists(prompt, 'encrypt_default'))
     config_item = get_value_if_key_exists(prompt, 'prompt_text')
     prompt_text = f'Please enter the default {config_item}: '
+    
     user_response = get_input(config, input_type, prompt_text, default_value = '', simulated_user_input = simulated_user_input)
-    user_reponse_is_valid = bool(verify_input(config, prompt, user_response))
+    verify_function_exists = bool(get_value_if_key_exists(prompt, 'verify_function'))
+    user_reponse_is_valid = bool(verify_input(config, prompt, user_response)) if verify_function_exists else True
 
     if not user_reponse_is_valid:
         print(format_red(f'Invalid value for \'{config_item}\', please try again.'))
@@ -51,8 +55,7 @@ def get_prompts_with_defaults(config: dict, prompts_filename: str, prompts_file_
         passphrase = get_encyrption_passphrase(config, prompts_filename) if 1 in encrypted_defaults else ''
         prompts_with_defaults: list[dict] = [
             get_prompt_with_default(config = config, prompt = prompt, encryption_passphrase = passphrase)
-            for prompt in prompts
-        ]
+            for prompt in prompts ]
 
         return prompts_with_defaults
     else:
@@ -70,7 +73,8 @@ def update_prompts_file_with_defaults(config: dict) -> None:
             prompts_file_contents = json.load(prompts_file)
             updated_prompt_file_contents: dict = { **prompts_file_contents, "prompts": prompts_with_defaults}
             
-        print(updated_prompt_file_contents)
+        with open(prompts_file_path, 'w') as prompts_file:
+            json.dump(updated_prompt_file_contents, prompts_file, indent = 4)
 
 def get_filename(file_type:str, config_files_path: str, quiet = False) -> str | bool:
     default_config_filename: str = f'default_{file_type}.json'
@@ -85,7 +89,7 @@ def get_filename(file_type:str, config_files_path: str, quiet = False) -> str | 
     if bool(config_filenames):
         if number_of_configs == 1:
             if not quiet:
-                print(f'One {file_type} file found: {config_filenames[0]}')
+                print(f'One {file_type} file found: \'{config_filenames[0]}\'')
             config_filename:str = config_filenames[0]
         if number_of_configs > 1:
             prompt = f'Please select a {file_type} file to load:'
@@ -95,7 +99,7 @@ def get_filename(file_type:str, config_files_path: str, quiet = False) -> str | 
         if confirm(config = {}, confirm_prompt = prompt):
             shutil.copyfile(default_config_file_path, custom_config_file_path)
             if not quiet:
-                print(f'Copied {default_config_filename} to {custom_config_filename}.')
+                print(f'Copied \'{default_config_filename}\' to \'{custom_config_filename}\'.')
             config_filename = custom_config_filename
         else:
             config_filename = False
@@ -111,10 +115,7 @@ def get_config(main_file: str, args: list, quiet = True) -> dict:
         json_file_path: str = os.path.join(config_files_path, config_filename)
     else:
         print(format_red('Unable to load config file! Exiting script.'))
-        try:
-            sys.exit(1)
-        except SystemExit:
-            os._exit(1)
+        exit_with_code(1)
 
     with open(json_file_path) as config_file:
         config: dict = json.load(config_file)
@@ -132,7 +133,3 @@ def get_config(main_file: str, args: list, quiet = True) -> dict:
             }
 
         return finished_config
-
-
-            
-        

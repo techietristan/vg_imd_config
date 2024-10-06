@@ -1,6 +1,7 @@
 from unittest import TestCase
 
-from utils.parse_utils import apply_user_input_formatting_function, is_vaild_firmware_version, is_valid_hostname, get_next_in_sequence, guess_next_hostname, parse_firmware_url, verify_input, format_user_input, apply_format_function
+from utils.parse_utils import is_exactly_zero, apply_user_input_formatting_function, is_vaild_firmware_version, is_valid_hostname, get_next_in_sequence, guess_next_hostname, parse_firmware_url, verify_input, format_user_input, apply_format_function
+
 test_config: dict = {
     "hostname_format": {
         "hostname_regex": "(.+)([a,b,A,B])(\\d)$",
@@ -8,6 +9,16 @@ test_config: dict = {
         "sequence": ['a', 'b']
     }
 }
+
+class TestIsExactlyZero(TestCase):
+
+    def test_is_exactly_zero_with_falsy_values_besides_integer_zero(self):
+        falsy_values: list = [[], (), {}, set(), "", range(0), 0.0, 0j, None, False]
+        for falsy_value in falsy_values:
+            self.assertFalse(is_exactly_zero(falsy_value))
+    
+    def test_is_exactly_zero_with_integer_zero(self):
+        self.assertTrue(is_exactly_zero(0))
 
 class TestIsValidFirmwareVersion(TestCase):
 
