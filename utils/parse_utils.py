@@ -1,11 +1,13 @@
 import re, validators
 
+from re import Match, Pattern
+
 from utils.format_utils import format_red
 
 def is_exactly_zero(value) -> bool:
     return type(value) == int and value == 0
 
-def is_valid(config: dict, regex: str, string: str): 
+def is_valid(config: dict, regex: str, string: str) -> bool: 
     if type(string) != str:
         return False
     regex_match = re.match(regex, string)
@@ -42,9 +44,9 @@ def guess_next_hostname(config: dict, hostname: str) -> str | None:
     try:
         hostname_format: dict = config['hostname_format']
         variable_index: int = hostname_format['variable_group_index']
-        hostname_regex: str = re.compile(hostname_format['hostname_regex'])
-        regex_match: list = hostname_regex.match(hostname)
-        hostname_parts: list = regex_match.groups()
+        hostname_regex: Pattern = re.compile(hostname_format['hostname_regex'])
+        regex_match: Match[str] | None = hostname_regex.match(hostname)
+        hostname_parts: list = regex_match.groups() # type: ignore
         variable_suffix: str = hostname_parts[variable_index]
         next_in_sequence: str | None = get_next_in_sequence(config, variable_suffix)
         next_hostname_parts: list = [ 
@@ -98,6 +100,7 @@ def run_verify_function(config: dict, user_input: str, verify_function: list) ->
             return bool(validators.domain(stripped_user_input))
         case 'is_valid_username':
             return bool(re.fullmatch(r'[a-zA-Z][a-zA-Z0-9-_]{0,31}', stripped_user_input))
+    return False
 
 def verify_input(config: dict, input_params: dict, user_input: str) -> bool:
     verify_functions: list[list] = input_params['verify_functions']
@@ -113,7 +116,7 @@ def verify_input(config: dict, input_params: dict, user_input: str) -> bool:
     else:
         return True
 
-def apply_user_input_formatting_function(config: dict, format_function: list, current_formatting: str):
+def apply_user_input_formatting_function(config: dict, format_function: list, current_formatting: str) -> str:
     match format_function[0]:
         case 'zfill':
             return current_formatting.zfill(format_function[1])
@@ -121,6 +124,7 @@ def apply_user_input_formatting_function(config: dict, format_function: list, cu
             return current_formatting.lower()
         case 'upper':
             return current_formatting.upper()
+    return current_formatting
 
 def apply_user_input_formatting_functions(config: dict, format_functions: list[list], next_formatting: str, iteration = 0) -> str:
     number_of_format_functions: int = len(format_functions)
@@ -145,7 +149,8 @@ def apply_format_function(config: dict, format_function: list, parsed_prompt_res
     match format_function[0]:
         case 'apply_template':
             format_function_template: str = format_function[1]
-            format_function_keys: dict = [ format_function_key for format_function_key in format_function[2] ]
+            format_function_keys: list = [ format_function_key for format_function_key in format_function[2] ]
             prompt_responses: dict = { response['config_item'] : response['value'] for response in parsed_prompt_responses }
             formatted_string: str = format_function_template.format(**prompt_responses)
             return formatted_string
+    return ''

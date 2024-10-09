@@ -13,6 +13,8 @@ cryptography = "*"
 [dev-packages]
 py-mon = "*"
 coverage = "*"
+types-requests = "*"
+types-tqdm = "*"
 
 [requires]
 python_version = "3.12"

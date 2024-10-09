@@ -7,26 +7,26 @@ format_escape_strings: dict = {
     'blue':     '\033[94m',
 }
 
-def format_color(color: str, text: str):
+def format_color(color: str, text: str) -> str:
     color_sequence = format_escape_strings[color]
     end_sequence = '\033[00m'
 
     return f'{color_sequence}{text}{end_sequence}'
 
-def format_red(text: str):
+def format_red(text: str) -> str:
     return format_color('red', text)
 
-def format_yellow(text: str):
+def format_yellow(text: str) -> str:
     return format_color('yellow', text)
 
-def format_green(text: str):
+def format_green(text: str) -> str:
     return format_color('green', text)
 
-def format_blue(text: str):
+def format_blue(text: str) -> str:
     return format_color('blue', text)
 
-def format_bold(text: str):
+def format_bold(text: str) -> str:
     return f'\033[1m{text}\033[0m'
 
-def clear_line():
+def clear_line() -> None:
     sys.stdout.write('\x1b[2K')

@@ -1,5 +1,6 @@
 import json, requests, sys, time, urllib3
-from halo import Halo
+from halo import Halo # type: ignore
+from requests import Response
 
 from utils.firmware_utils import get_firmware_file_path
 from utils.format_utils import format_red
@@ -8,8 +9,8 @@ from utils.prompt_utils import confirm, get_credentials
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-def get_firmware_version(config: dict, print_result: bool = False) -> str:
-    spinner = Halo(text = 'Checking current IMD firmware version...\n', spinner = 'dots')
+def get_firmware_version(config: dict, print_result: bool = False) -> str | bool:
+    spinner: Halo = Halo(text = 'Checking current IMD firmware version...\n', spinner = 'dots')
     
     api_url: str = config['api_base_url']
     api_firmware_url: str= f'{api_url}sys/version'
@@ -31,16 +32,20 @@ def get_firmware_version(config: dict, print_result: bool = False) -> str:
             raise Exception(firmware_response)
     except Exception as error:
         spinner.fail(f'Unable to get IMD firmware version: {error}\nPlease ensure you are able to ping the IMD.')
-        if confirm(confirm_prompt = 'Do you want to try again?: '):
+        if confirm(config, confirm_prompt = 'Do you want to try again?: '):
             return get_firmware_version(config = config, print_result = print_result)
+    return False
 
 def make_api_call(
     config: dict,
     url: str, 
     headers: dict, 
     json_payload: dict, 
-    action: str = 'post', 
-    quiet: bool = False) -> str | dict | bool:
+    action: str = 'post',
+    status_msg: str = '',
+    success_msg: str = '',
+    function_name: str = '',
+    quiet: bool = False) -> Response | bool:
 
     spinner = Halo(text = f'{status_msg}\n', spinner = 'dots')
     try:
@@ -59,11 +64,12 @@ def make_api_call(
         return response
     except requests.exceptions.ConnectionError as error:
         spinner.fail(f'Error while interacting with IMD: {error}.')
-        if confirm('Do you want to try again? (y or n): '):
-            make_api_call(config)
+        if confirm(config, 'Do you want to try again? (y or n): '):
+            make_api_call(config, url, headers, json_payload, action, status_msg, success_msg, function_name, quiet)
     except Exception as error:
         if not quiet: spinner.fail(f'Function \'{function_name}\' error: \'{error}\'')
-        return False
+        
+    return False
 
 def interact_with_imd(
     config: dict, 
@@ -76,7 +82,7 @@ def interact_with_imd(
     quiet: bool = True, 
     function_name: str = '', 
     status_msg: str = '', 
-    success_msg: str = '') -> str | dict | bool:
+    success_msg: str = '') -> Response | bool:
 
     headers = config['headers']
     api_base_url = config['api_base_url']
@@ -86,7 +92,10 @@ def interact_with_imd(
     url = url, 
     headers = headers, 
     json_payload = json_payload, 
-    action = action, 
+    action = action,
+    status_msg = status_msg,
+    success_msg = success_msg,
+    function_name = function_name,
     quiet = quiet)
 
 def set_imd_creds(config: dict, quiet: bool = True) -> dict | bool:
@@ -106,7 +115,9 @@ def set_imd_creds(config: dict, quiet: bool = True) -> dict | bool:
         status_msg = 'Setting IMD Credentials.',
         success_msg = 'Successfully Set IMD credentials!')
 
-def login_to_imd(config: dict, quiet: bool = True) -> dict | bool:
+    return False
+
+def login_to_imd(config: dict, quiet: bool = True) -> str | bool:
     username, password = get_credentials(config)
     login_api_endpoint: str = f'auth/{username}'
     login_json: dict = {'token': '', 'cmd': 'login', 'data': {'password': password}}
@@ -123,12 +134,11 @@ def login_to_imd(config: dict, quiet: bool = True) -> dict | bool:
         status_msg = 'Logging into IMD.',
         success_msg = 'Successfully Logged into IMD!')
     
-    try:
-        return response['data']['token']
-    except Exception:
-        return False
+    if type(response) == Response:
+        return response['data']['token'] # type: ignore
+    return False
 
-def reset_imd_to_factory_defaults(config: dict, quiet: bool = True) -> dict | bool:
+def reset_imd_to_factory_defaults(config: dict, quiet: bool = True) -> dict | None:
     username, password = get_credentials(config)
     reset_api_endpoint: str = f'sys/'
     factory_reset_json: dict = {'username': username, 'password': password, 'cmd': "reset", 'data': {'target': "defaults"}}
@@ -144,14 +154,16 @@ def reset_imd_to_factory_defaults(config: dict, quiet: bool = True) -> dict | bo
         function_name = 'reset_imd_to_factory_defaults', 
         status_msg = 'Resetting IMD to Factory Defaults.',
         success_msg = 'Successfully Reset IMD to Factory Defaults!')
+    
+    return None
 
 def upgrade_imd_firmware(config: dict, quiet: bool = True) -> dict | bool:
     current_firmware_version = get_firmware_version(config, print_result = False)
     target_firmware_version = config['firmware_target']
     if current_firmware_version == target_firmware_version:
         print(f'IMD firmware already up to date (v.{current_firmware_version}).')
-        return
-    elif confirm(f'Current IMD firmware version is {current_firmware_version}.\nUpgrade to {target_firmware_version}? (y or n): '):
+        return False
+    elif confirm(config, f'Current IMD firmware version is {current_firmware_version}.\nUpgrade to {target_firmware_version}? (y or n): '):
         firmware_file_path, firmware_filename = get_firmware_file_path(config = config)
         if bool(firmware_file_path):
             username, password = get_credentials(config)
@@ -182,3 +194,5 @@ def upgrade_imd_firmware(config: dict, quiet: bool = True) -> dict | bool:
             return upgrade_firmware(config)
         else:
             print(format_red('Unable to find or download firmware. Please check your configuration.'))
+        
+    return False

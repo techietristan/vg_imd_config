@@ -40,14 +40,14 @@ def get_credentials(config: dict) -> tuple:
         update_credentials(config)
     return config['username'], config['password']
 
-def input_with_default(prompt: str, default: str) -> None:
+def input_with_default(prompt: str, default: str) -> str:
     user_input = input(f'{prompt} (press ENTER to use {default}): ')
     return default if user_input == '' else user_input
 
-def get_input(config: dict, input_type: str = 'input', formatted_prompt_text: str = '', default_value: str = '', simulated_user_input: str | bool = None):
+def get_input(config: dict, input_type: str = 'input', formatted_prompt_text: str = '', default_value: str = '', simulated_user_input: str = ''):
     match input_type:
         case 'input':
-            user_input = input(formatted_prompt_text)      
+            user_input: str = input(formatted_prompt_text)      
         case 'getpass':
             user_input = get_password(config = config, quiet = False)
         case 'none':
@@ -64,8 +64,9 @@ def get_input(config: dict, input_type: str = 'input', formatted_prompt_text: st
         print(format_red('Invalid input. Please enter a valid value.'))
         return get_input(config, formatted_prompt_text, default_value, simulated_user_input)
 
-def validate_selection(options: list) -> int:
-    selection: str = get_input({}).strip()
+def validate_selection(options: list, selection: str = '') -> int:
+    if not bool(selection):
+        selection = get_input({}).strip()
     number_of_options: int = len(options)
     try:
         selection_int: int = int(selection) - 1
@@ -106,7 +107,7 @@ def get_prompt_function(config: dict, input_params: dict, quiet = False):
     default_or_example: str = f'(press \'Enter\' to use \'{default_value}\')' if bool(default_value) else f'(e.g. \'{example_text}\')'
     formatted_prompt_text = f'Please enter the {prompt_text}{default_or_example}: '
 
-    def prompt_function(config: dict = config, simulated_user_input: str | bool = None):
+    def prompt_function(config: dict = config, simulated_user_input: str = ''):
         user_input = get_input(config = config, input_type = input_type, formatted_prompt_text = formatted_prompt_text, default_value = default_value, simulated_user_input = simulated_user_input)
         formatted_user_input = format_user_input(config = config, input_params = input_params, user_input = user_input)
         is_valid_input = verify_input(config = config, input_params = input_params, user_input = user_input)

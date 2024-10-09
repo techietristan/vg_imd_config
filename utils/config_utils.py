@@ -1,5 +1,7 @@
 import json, os, shutil, sys
 
+from argparse import Namespace
+
 from utils.dict_utils import get_value_if_key_exists
 from utils.encryption_utils import encrypt
 from utils.format_utils import format_red
@@ -41,7 +43,7 @@ def get_prompt_with_default(config: dict, prompt: dict, encryption_passphrase = 
         prompt_salt = salt if bool(salt) else encryption_salt
         prompt_with_default: dict = { **prompt, "salt": prompt_salt, "default_value": encrypted_text }
     else:
-        prompt_with_default: dict = { **prompt, "default_value": user_response }
+        prompt_with_default = { **prompt, "default_value": user_response }
 
     return prompt_with_default
 
@@ -90,12 +92,12 @@ def get_filename(file_type:str, config_files_path: str, quiet = False) -> str | 
         if number_of_configs == 1:
             if not quiet:
                 print(f'One {file_type} file found: \'{config_filenames[0]}\'')
-            config_filename:str = config_filenames[0]
+            config_filename:str | bool = config_filenames[0]
         if number_of_configs > 1:
-            prompt = f'Please select a {file_type} file to load:'
-            config_filename: str = enumerate_options(config = {}, options = config_filenames, prompt = prompt)
+            prompt: str = f'Please select a {file_type} file to load:'
+            config_filename = enumerate_options(config = {}, options = config_filenames, prompt = prompt)
     else:
-        prompt: str = f'No {file_type} files found. Do you want to make a copy of the default {file_type} file? '
+        prompt = f'No {file_type} files found. Do you want to make a copy of the default {file_type} file? '
         if confirm(config = {}, confirm_prompt = prompt):
             shutil.copyfile(default_config_file_path, custom_config_file_path)
             if not quiet:
@@ -106,7 +108,7 @@ def get_filename(file_type:str, config_files_path: str, quiet = False) -> str | 
 
     return config_filename
 
-def get_config(main_file: str, args: list, quiet = True) -> dict:
+def get_config(main_file: str, args: Namespace, quiet = True) -> dict:
     script_path: str = os.path.dirname(main_file)
     config_files_path: str = os.path.join(script_path, 'config')
     config_filename: str = args.config_file if bool(args.config_file) else get_filename('config', config_files_path = config_files_path, quiet = quiet)
@@ -122,7 +124,7 @@ def get_config(main_file: str, args: list, quiet = True) -> dict:
         
         imd_ip: str | None = args.imd_ip_address
         current_imd_ip: str | None = config['default_imd_ip'] if imd_ip == None else imd_ip
-        parsed_firmware_url: dict = parse_firmware_url(config, config['firmware_file_url'])
+        parsed_firmware_url: dict | bool = parse_firmware_url(config, config['firmware_file_url'])
 
         finished_config = {**config, 
             "current_imd_ip": current_imd_ip,

@@ -13,14 +13,14 @@ def download_and_extract_firmware(config: dict, firmware_download_destination: s
             raise RuntimeError(f'Error while attemping to download firmware file: {firmware_request.status_code}')
         firmware_file_size: int = int(firmware_request.headers.get('Content-Length', 0))
         desc: str = '(Unknown total file size)' if firmware_file_size == 0 else ''
-        firmware_request.raw.read = functools.partial(firmware_request.raw.read, decode_content = True)
+        firmware_request.raw.read = functools.partial(firmware_request.raw.read, decode_content = True) # type: ignore
         with tqdm.wrapattr(firmware_request.raw, 'read', total = firmware_file_size, desc = desc) as firmware_request_raw:
             with open(firmware_download_destination, 'wb') as zipped_firmware_file:
                 shutil.copyfileobj(firmware_request_raw, zipped_firmware_file)
         shutil.unpack_archive(firmware_download_destination, firmware_dir_path)
         return True
     except Exception as error:
-        if confirm(f'Error downloading firmware file: {error}\n Try again?', error = True):
+        if confirm(config, f'Error downloading firmware file: {error}\n Try again?', error = True):
                 return download_and_extract_firmware(config, firmware_download_destination , firmware_dir_path)
         else:
             return False
@@ -42,7 +42,7 @@ def get_firmware_file_path(config: dict) -> tuple[str, str] | tuple[bool, bool]:
         try:
             download_and_extract_firmware(config = config, firmware_download_destination = firmware_download_destination, firmware_dir_path = firmware_dir_path)
         except Exception as download_error:
-            if confirm(f'Error downloading firmware file: {download_error}\n Try again?', error = True):
+            if confirm(config, f'Error downloading firmware file: {download_error}\n Try again?', error = True):
                 return get_firmware_file_path(config)
             else:
                 return False, False
@@ -52,7 +52,7 @@ def get_firmware_file_path(config: dict) -> tuple[str, str] | tuple[bool, bool]:
             shutil.unpack_archive(firmware_download_destination, firmware_dir_path)
             print(f'Firmware extracted to \'{firmware_dir_path}\'.')
         except Exception as error:
-            if confirm(f'Error extracting firmware file: {error}\n Try again?', error = True):
+            if confirm(config, f'Error extracting firmware file: {error}\n Try again?', error = True):
                 return get_firmware_file_path(config)
             else:
                 return False, False
