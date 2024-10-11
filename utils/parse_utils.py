@@ -1,11 +1,18 @@
 import re, validators
 
 from re import Match, Pattern
+from typing import Any
 
 from utils.format_utils import format_red
 
-def is_exactly_zero(value) -> bool:
-    return type(value) == int and value == 0
+def is_exactly(value: Any, expected_value: Any) -> bool:
+    return type(value) == type(expected_value) and value == expected_value
+
+def is_exactly_zero(value: Any) -> bool:
+    return is_exactly(value, 0)
+
+def is_exactly_one(value: Any) -> bool:
+    return is_exactly(value, 1)
 
 def is_valid(config: dict, regex: str, string: str) -> bool: 
     if type(string) != str:
@@ -154,3 +161,18 @@ def apply_format_function(config: dict, format_function: list, parsed_prompt_res
             formatted_string: str = format_function_template.format(**prompt_responses)
             return formatted_string
     return ''
+
+def has_unspecified_default(prompt: dict) -> bool:
+    try:
+        is_unique_value: bool = is_exactly_one(prompt['unique_value'])
+        has_default_value: bool = bool(prompt['default_value'])
+        default_is_unspecified: bool = not is_unique_value and not has_default_value
+        return default_is_unspecified
+    except KeyError:
+        return False
+
+def contains_unspecified_defaults(prompts: list[dict]) -> bool:
+    unspecified_defaults: list[bool] = [
+        has_unspecified_default(prompt)
+        for prompt in prompts ]
+    return any(unspecified_defaults)

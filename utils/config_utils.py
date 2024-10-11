@@ -4,8 +4,8 @@ from argparse import Namespace
 
 from utils.dict_utils import get_value_if_key_exists
 from utils.encryption_utils import encrypt
-from utils.format_utils import format_red
-from utils.parse_utils import parse_firmware_url, verify_input, is_exactly_zero
+from utils.format_utils import format_red, format_blue, format_bold
+from utils.parse_utils import parse_firmware_url, verify_input, is_exactly_zero, contains_unspecified_defaults
 from utils.prompt_utils import confirm, enumerate_options, get_input
 from utils.sys_utils import exit_with_code
 
@@ -53,7 +53,7 @@ def get_prompts_with_defaults(config: dict, prompts_filename: str, prompts_file_
     prompts: list[dict] = prompts_file_contents['prompts']
     encrypted_defaults: list[int] = [ get_value_if_key_exists(prompt, 'encrypt_value') for prompt in prompts ]
     
-    if confirm(config, f'Do you want to set defaults for \'{prompts_filename}\'? '):
+    if confirm(config, f'Do you want to set defaults for \'{format_blue(prompts_filename)}\'? '):
         passphrase = get_encyrption_passphrase(config, prompts_filename) if 1 in encrypted_defaults else ''
         prompts_with_defaults: list[dict] = [
             get_prompt_with_default(config = config, prompt = prompt, encryption_passphrase = passphrase)
@@ -65,34 +65,40 @@ def get_prompts_with_defaults(config: dict, prompts_filename: str, prompts_file_
 
 def update_prompts_file_with_defaults(config: dict) -> None:
     config_files_path: str = get_value_if_key_exists(config, 'config_files_path')
-    prompts_filename = get_value_if_key_exists(config, 'interactive_prompts_filename')
-    prompts_file_path: str = os.path.join(config_files_path, prompts_filename)
-
-    if bool(prompts_filename):
-        prompts_with_defaults: list[dict] = get_prompts_with_defaults(config, prompts_filename, prompts_file_path)
-        
+    prompts_filename: str = get_value_if_key_exists(config, 'interactive_prompts_filename')
+    if bool(prompts_filename):   
+        prompts_file_path: str = os.path.join(config_files_path, prompts_filename)
         with open(prompts_file_path, 'r') as prompts_file:
             prompts_file_contents = json.load(prompts_file)
-            updated_prompt_file_contents: dict = { **prompts_file_contents, "prompts": prompts_with_defaults}
-            
-        with open(prompts_file_path, 'w') as prompts_file:
-            json.dump(updated_prompt_file_contents, prompts_file, indent = 4)
+            all_defaults_specified: bool = not(contains_unspecified_defaults(prompts_file_contents['prompts']))
+            if all_defaults_specified:
+                return
+            else:
+                prompts_with_defaults: list[dict] = get_prompts_with_defaults(config, prompts_filename, prompts_file_path)
+                updated_prompt_file_contents: dict = { **prompts_file_contents, "prompts": prompts_with_defaults}      
+                with open(prompts_file_path, 'w') as prompts_file:
+                    json.dump(updated_prompt_file_contents, prompts_file, indent = 4)
 
-def get_filename(file_type:str, config_files_path: str, quiet = False) -> str | bool:
-    default_config_filename: str = f'default_{file_type}.json'
-    custom_config_filename: str = f'{file_type}.json'
-    default_config_file_path: str = os.path.join(config_files_path, default_config_filename)
-    custom_config_file_path: str = os.path.join(config_files_path, custom_config_filename)
+def get_config_filenames(file_type: str, config_files_path: str) -> list[str]:
     config_filenames: list = [ filename for filename in os.listdir(config_files_path)
         if file_type in filename
         and 'default' not in filename 
         and '.json' in filename ]
+    return config_filenames
+
+def get_filename(file_type:str, config_files_path: str, quiet = False) -> str | bool | None:
+    default_config_filename: str = f'default_{file_type}.json'
+    custom_config_filename: str = f'{file_type}.json'
+    default_config_file_path: str = os.path.join(config_files_path, default_config_filename)
+    custom_config_file_path: str = os.path.join(config_files_path, custom_config_filename)
+    config_filenames: list[str] = get_config_filenames(file_type, config_files_path)
     number_of_configs: int = len(config_filenames)
+
     if bool(config_filenames):
         if number_of_configs == 1:
             if not quiet:
-                print(f'One {file_type} file found: \'{config_filenames[0]}\'')
-            config_filename:str | bool = config_filenames[0]
+                print(f'One {file_type} file found: \'{format_blue(config_filenames[0])}\'')
+            config_filename:str | bool | None = config_filenames[0]
         if number_of_configs > 1:
             prompt: str = f'Please select a {file_type} file to load:'
             config_filename = enumerate_options(config = {}, options = config_filenames, prompt = prompt)
@@ -101,16 +107,21 @@ def get_filename(file_type:str, config_files_path: str, quiet = False) -> str | 
         if confirm(config = {}, confirm_prompt = prompt):
             shutil.copyfile(default_config_file_path, custom_config_file_path)
             if not quiet:
-                print(f'Copied \'{default_config_filename}\' to \'{custom_config_filename}\'.')
+                print(f'Copied \'{format_blue(default_config_filename)}\' to \'{format_blue(custom_config_filename)}\'.')
             config_filename = custom_config_filename
         else:
-            config_filename = False
+            config_filename = None
 
     return config_filename
 
 def get_config(main_file: str, args: Namespace, quiet = True) -> dict:
     script_path: str = os.path.dirname(main_file)
     config_files_path: str = os.path.join(script_path, 'config')
+    config_filenames: list = get_config_filenames('config', config_files_path)
+    prompts_filenames: list = get_config_filenames('prompts', config_files_path)
+    is_first_run: bool = not bool(config_filenames) and not bool(prompts_filenames)
+    if is_first_run and not quiet:
+        print(format_bold('\nWelcome to the Geist Vertiv IMD Configuration Script!\n'))
     config_filename: str = args.config_file if bool(args.config_file) else get_filename('config', config_files_path = config_files_path, quiet = quiet)
     prompts_filename: str = args.prompts_file if bool (args.prompts_file) else get_filename('prompts', config_files_path = config_files_path, quiet = quiet)
     if bool(config_filename):

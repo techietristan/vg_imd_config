@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from utils.parse_utils import is_exactly_zero, apply_user_input_formatting_function, is_vaild_firmware_version, is_valid_hostname, get_next_in_sequence, guess_next_hostname, parse_firmware_url, verify_input, format_user_input, apply_format_function
+from utils.parse_utils import has_unspecified_default, contains_unspecified_defaults, is_exactly, is_exactly_zero, is_exactly_one, apply_user_input_formatting_function, is_vaild_firmware_version, is_valid_hostname, get_next_in_sequence, guess_next_hostname, parse_firmware_url, verify_input, format_user_input, apply_format_function
 
 test_config: dict = {
     "hostname_format": {
@@ -10,15 +10,34 @@ test_config: dict = {
     }
 }
 
-class TestIsExactlyZero(TestCase):
+falsy_values: list = [[], (), {}, set(), "", range(0), 0.0, 0j, None, False]
+truthy_values: list = [[''], (''), 'string', set(''), dict({'key': 'value'}), 2, 3, True]
 
-    def test_is_exactly_zero_with_falsy_values_besides_integer_zero(self):
-        falsy_values: list = [[], (), {}, set(), "", range(0), 0.0, 0j, None, False]
+class TestIsExactly(TestCase):
+    def test_is_exactly_returns_false_if_truthy_other_than_integer_one(self):
+        for truthy_value in truthy_values:
+            self.assertFalse(is_exactly(truthy_value, 1))
+    def test_is_exactly_returns_true_if_integer_one(self):
+            self.assertTrue(is_exactly(1, 1))
+    def test_is_exactly_returns_false_if_falsy_other_than_integer_zero(self):
+        for truthy_value in truthy_values:
+            self.assertFalse(is_exactly(truthy_value, 0))
+    def test_is_exactly_returns_true_if_integer_zero(self):
+            self.assertTrue(is_exactly(0, 0))
+
+class TestIsExactlyZero(TestCase):
+    def test_is_exactly_zero_returns_false_if_falsy_other_than_integer_zero(self):
         for falsy_value in falsy_values:
             self.assertFalse(is_exactly_zero(falsy_value))
-    
-    def test_is_exactly_zero_with_integer_zero(self):
-        self.assertTrue(is_exactly_zero(0))
+    def test_is_exactly_zero_returns_true_if_integer_zero(self):
+            self.assertTrue(is_exactly_zero(0))
+
+class TestIsExactlyOne(TestCase):
+    def test_is_exactly_returns_false_if_truthy_other_than_integer_one(self):
+        for truthy_value in truthy_values:
+            self.assertFalse(is_exactly_one(truthy_value))
+    def test_is_exactly_returns_true_if_integer_one(self):
+            self.assertTrue(is_exactly_one(1))
 
 class TestIsValidFirmwareVersion(TestCase):
 
@@ -392,4 +411,72 @@ class TestApplyFormatFunction(TestCase):
         format_function: list = self.test_formatter['format_functions'][0]
         formatted_string = apply_format_function({}, format_function, self.test_parsed_promts)
         self.assertEqual(formatted_string, self.expected_formatted_string)
+
+class TestHasUnspecifiedDefault(TestCase):
+    unspecified_default_1: dict = {
+        "unique_value": 0,
+        "default_value": ""
+    }
+    specified_default_1: dict = {
+        "unique_value": 0,
+        "default_value": "default_value_1",
+    }
+    unique_value_1: dict = {
+        "unique_value": 1,
+        "default_value": ""
+    }
+    unique_value_without_default_key_1: dict = {
+        "unique_value": 1
+    }
+
+    def test_unspecified_non_unique_value_returns_true(self):
+        self.assertTrue(has_unspecified_default(self.unspecified_default_1))
+
+    def test_specified_non_unique_value_returns_false(self):
+        self.assertFalse(has_unspecified_default(self.specified_default_1))
+    
+    def test_unique_value_returns_false(self):
+        self.assertFalse(has_unspecified_default(self.unique_value_1))
+
+    def test_unique_value_without_default_key_returns_false(self):
+        self.assertFalse(has_unspecified_default(self.unique_value_without_default_key_1))
+
+class TestContainsUnspecifiedDefaults(TestCase):
+    unspecified_default_1: dict = {
+        "unique_value": 0,
+        "default_value": ""
+    }
+    unspecified_default_2: dict = {
+        "unique_value": 0,
+        "default_value": ""
+    }
+
+    specified_default_1: dict = {
+        "unique_value": 0,
+        "default_value": "default_value_1",
+    }
+    specified_default_2: dict = {
+        "unique_value": 0,
+        "default_value": "default_value_2",
+    }
+    unique_value_1: dict = {
+        "unique_value": 1,
+        "default_value": ""
+    }
+    unique_value_without_default_key_1: dict = {
+        "unique_value": 1
+    }
+
+    specififed: list[dict] = [ specified_default_1, specified_default_2, unique_value_1, unique_value_without_default_key_1 ]
+    mixed: list[dict] = [ unspecified_default_1, specified_default_1 , unique_value_1, unique_value_without_default_key_1 ]
+    unspecified: list[dict] = [ unspecified_default_1, unspecified_default_2, unique_value_1, unique_value_without_default_key_1 ]
+
+
+    def test_returns_false_if_list_contains_exclusively_specified_defaults(self):
+        self.assertFalse(contains_unspecified_defaults(self.specififed))
+
+    def test_returns_true_if_list_contains_unspecified_defaults(self):
+        self.assertTrue(contains_unspecified_defaults(self.mixed))
+        self.assertTrue(contains_unspecified_defaults(self.unspecified))
+        
 

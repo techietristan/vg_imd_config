@@ -36,6 +36,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-# next to do: don't update prompts file if it already contains defaults
-# load prompts from file and decrypt values
