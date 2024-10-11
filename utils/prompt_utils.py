@@ -1,5 +1,5 @@
 from utils.format_utils import format_bold, format_red, clear_line
-from utils.parse_utils import guess_next_hostname, verify_input, format_user_input
+from utils.parse_utils import guess_next_hostname, verify_input, format_user_input, is_exactly_one
 
 import json
 from getpass import getpass
@@ -28,7 +28,7 @@ def get_password(config: dict, prompt_text: str = 'Please enter the password', c
         else:
             if not quiet:
                 print(format_red('Passwords do not match. Please try again.'))
-            return get_password(config, prompt_text, quiet)
+            return get_password(config, prompt_text, confirm_input, quiet)
     return password
 
 def update_credentials(config: dict) -> None:
@@ -129,7 +129,7 @@ def get_prompt_function(config: dict, input_params: dict, quiet = False):
     return prompt_function
 
 def get_next_imd_config(config: dict, prompts: dict) -> list[dict]:
-    if bool(prompts['greeting']['display']):
+    if bool(prompts['greeting']['display']) and is_exactly_one(config['display_greeting']):
         print(format_bold(prompts['greeting']['text']))
         prompts['greeting']['display'] = 0
 

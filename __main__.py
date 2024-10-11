@@ -2,7 +2,8 @@ import os, sys
 
 from utils.api_utils import get_firmware_version, reset_imd_to_factory_defaults, set_imd_creds, upgrade_imd_firmware
 from utils.argument_utils import parse_args
-from utils.config_utils import get_config, update_prompts_file_with_defaults, decrypt_prompts
+from utils.config_utils import get_config, update_prompts_file_with_defaults
+from utils.encryption_utils import decrypt_prompts
 from utils.format_utils import format_yellow
 from utils.prompt_utils import get_next_imd_config
 from utils.sys_utils import exit_with_code

@@ -1,7 +1,7 @@
 {
     "version": "1.0",
     "greeting": {
-        "text": "\nWelcome to the Geist Vertiv IMD Configuration Script!\n",
+        "text": "\nWelcome to the Vertiv Geist IMD Configuration Script!\n",
         "display": 1
     },
     "prompts": [

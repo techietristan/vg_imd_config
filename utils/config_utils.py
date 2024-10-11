@@ -3,9 +3,9 @@ import json, os, shutil, sys
 from argparse import Namespace
 
 from utils.dict_utils import get_value_if_key_exists
-from utils.encryption_utils import encrypt, decrypt
+from utils.encryption_utils import encrypt
 from utils.format_utils import format_red, format_blue, format_bold
-from utils.parse_utils import contains_encrypted_defaults, parse_firmware_url, verify_input, is_exactly_zero, is_exactly_one, contains_unspecified_defaults
+from utils.parse_utils import parse_firmware_url, verify_input, is_exactly_zero, is_exactly_one, contains_unspecified_defaults
 from utils.prompt_utils import confirm, enumerate_options, get_input
 from utils.sys_utils import exit_with_code
 
@@ -52,16 +52,12 @@ def get_prompts_with_defaults(config: dict, prompts_filename: str, prompts_file_
         prompts_file_contents: dict = json.load(prompts_file)
     prompts: list[dict] = prompts_file_contents['prompts']
     encrypted_defaults: list[int] = [ get_value_if_key_exists(prompt, 'encrypt_default') for prompt in prompts ]
-    
-    if confirm(config, f'Do you want to set defaults for \'{format_blue(prompts_filename)}\'? '):
-        passphrase: str = get_encyrption_passphrase(config, prompts_filename) if 1 in encrypted_defaults else ''
-        prompts_with_defaults: list[dict] = [
-            get_prompt_with_default(config = config, prompt = prompt, encryption_passphrase = passphrase)
-            for prompt in prompts ]
+    passphrase: str = get_encyrption_passphrase(config, prompts_filename) if 1 in encrypted_defaults else ''
+    prompts_with_defaults: list[dict] = [
+        get_prompt_with_default(config = config, prompt = prompt, encryption_passphrase = passphrase)
+        for prompt in prompts ]
 
-        return prompts_with_defaults
-    else:
-        return prompts
+    return prompts_with_defaults
 
 def update_prompts_file_with_defaults(config: dict) -> None:
     config_files_path: str = get_value_if_key_exists(config, 'config_files_path')
@@ -73,11 +69,12 @@ def update_prompts_file_with_defaults(config: dict) -> None:
             all_defaults_specified: bool = not(contains_unspecified_defaults(prompts_file_contents['prompts']))
             if all_defaults_specified:
                 return
-            else:
+            if confirm(config, f'Do you want to set defaults for \'{format_blue(prompts_filename)}\'? '):    
                 prompts_with_defaults: list[dict] = get_prompts_with_defaults(config, prompts_filename, prompts_file_path)
                 updated_prompt_file_contents: dict = { **prompts_file_contents, "prompts": prompts_with_defaults}      
                 with open(prompts_file_path, 'w') as prompts_file:
                     json.dump(updated_prompt_file_contents, prompts_file, indent = 4)
+                print(f'Defaults written to \'{format_blue(prompts_filename)}\'!\n')
 
 def get_config_filenames(file_type: str, config_files_path: str) -> list[str]:
     config_filenames: list[str] = [ filename for filename in os.listdir(config_files_path)
@@ -121,7 +118,7 @@ def get_config(main_file: str, args: Namespace, quiet: bool = True) -> dict:
     prompts_filenames: list = get_config_filenames('prompts', config_files_path)
     is_first_run: bool = not bool(config_filenames) and not bool(prompts_filenames)
     if is_first_run and not quiet:
-        print(format_bold('\nWelcome to the Geist Vertiv IMD Configuration Script!\n'))
+        print(format_bold('\nWelcome to the Vertiv Geist IMD Configuration Script!\n'))
     config_filename: str = args.config_file if bool(args.config_file) else get_filename('config', config_files_path = config_files_path, quiet = quiet)
     prompts_filename: str = args.prompts_file if bool (args.prompts_file) else get_filename('prompts', config_files_path = config_files_path, quiet = quiet)
     if bool(config_filename):
@@ -142,53 +139,9 @@ def get_config(main_file: str, args: Namespace, quiet: bool = True) -> dict:
             "api_base_url": f'https://{current_imd_ip}/api/',
             "parsed_firmware_url": parsed_firmware_url,
             "interactive_prompts_filename": prompts_filename,
-            "config_files_path": config_files_path
+            "config_files_path": config_files_path,
+            "display_greeting": 0 if is_first_run else 1
             }
 
-        return finished_config  
-
-class DecryptionException(Exception):
-    pass
-
-def decrypt_prompt(config: dict, prompt: dict) -> dict:
-    passphrase = get_value_if_key_exists(config, 'passphrase')
-    salt: str = get_value_if_key_exists(prompt, 'salt')
-    default_value: str = get_value_if_key_exists(prompt, 'default_value')
-    encrypt_default: bool = is_exactly_one(get_value_if_key_exists(prompt, 'encrypt_default'))
-    if bool(salt) and bool(default_value) and bool(passphrase):
-        decrypted_default_value: str | bool = decrypt(config, salt, default_value, passphrase)
-        if bool(decrypted_default_value):
-            return dict( prompt, **{ 'default_value' : decrypted_default_value } )
-        else:
-            raise DecryptionException
-    return prompt
-
-def decrypt_prompts(config: dict) -> dict:
-    prompts_filename: str = get_value_if_key_exists(config, 'interactive_prompts_filename')
-    config_files_path: str = get_value_if_key_exists(config, 'config_files_path')
-    prompts_file_path: str = os.path.join(config_files_path, prompts_filename)
-
-    with open(prompts_file_path) as prompts_file:
-        prompts_file_contents: dict= json.load(prompts_file)
-    
-    prompts: list[dict] = get_value_if_key_exists(prompts_file_contents, 'prompts')
-    passphrase = get_value_if_key_exists(config, 'passphrase')
-    if contains_encrypted_defaults(prompts):
-        if not bool(passphrase):
-            print(f'Encrypted defaults found in {format_blue(prompts_filename)}.')
-            passphrase_prompt: str = f'Please enter the encryption passphrase'
-            config['passphrase'] = get_input(config, 'getpass', passphrase_prompt)
-        try:
-            decrypted_prompts: list[dict] = [
-                decrypt_prompt(config, prompt)
-                for prompt in prompts ]
-            return dict(prompts_file_contents, **{ 'prompts': decrypted_prompts })    
-
-        except DecryptionException:
-            print(format_red('Incorrect passphrase!'))
-            config['passphrase'] = False
-            return decrypt_prompts(config)
-
-    return prompts_file_contents
-
+        return finished_config
     
