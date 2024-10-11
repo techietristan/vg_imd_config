@@ -3,19 +3,19 @@ import json, os, shutil, sys
 from argparse import Namespace
 
 from utils.dict_utils import get_value_if_key_exists
-from utils.encryption_utils import encrypt
+from utils.encryption_utils import encrypt, decrypt
 from utils.format_utils import format_red, format_blue, format_bold
-from utils.parse_utils import parse_firmware_url, verify_input, is_exactly_zero, contains_unspecified_defaults
+from utils.parse_utils import contains_encrypted_defaults, parse_firmware_url, verify_input, is_exactly_zero, is_exactly_one, contains_unspecified_defaults
 from utils.prompt_utils import confirm, enumerate_options, get_input
 from utils.sys_utils import exit_with_code
 
 def get_encyrption_passphrase(config: dict, prompts_filename: str) -> str:
-    print(f'Encrypted defaults found in {prompts_filename}.')
+    print(f'Encrypted defaults found in {format_blue(prompts_filename)}. Please set a passphrase for encrypting and decrypting these values.')
     passphrase: str = get_input(
         config = config, 
         input_type = 'getpass', 
-        formatted_prompt_text = f'Please enter the key to use for encrypting and decrypting these values: ')
-
+        formatted_prompt_text = f'Please enter the encryption passphrase')
+    config['passphrase'] = passphrase
     return passphrase
 
 def get_prompt_with_default(config: dict, prompt: dict, encryption_passphrase = '', salt = b'', simulated_user_input: str = '') -> dict:
@@ -28,7 +28,7 @@ def get_prompt_with_default(config: dict, prompt: dict, encryption_passphrase = 
     input_type: str = prompt_input_type if bool(prompt_input_type) else 'input'
     encrypt_default = bool(get_value_if_key_exists(prompt, 'encrypt_default'))
     config_item = get_value_if_key_exists(prompt, 'prompt_text')
-    prompt_text = f'Please enter the default {config_item}: '
+    prompt_text = f'Please enter the default {config_item}' if prompt_input_type == 'getpass' else f'Please enter the default {config_item}: ' 
     
     user_response = get_input(config, input_type, prompt_text, default_value = '', simulated_user_input = simulated_user_input)
     verify_function_exists = bool(get_value_if_key_exists(prompt, 'verify_function'))
@@ -51,10 +51,10 @@ def get_prompts_with_defaults(config: dict, prompts_filename: str, prompts_file_
     with open(prompts_file_path, 'r') as prompts_file:
         prompts_file_contents: dict = json.load(prompts_file)
     prompts: list[dict] = prompts_file_contents['prompts']
-    encrypted_defaults: list[int] = [ get_value_if_key_exists(prompt, 'encrypt_value') for prompt in prompts ]
+    encrypted_defaults: list[int] = [ get_value_if_key_exists(prompt, 'encrypt_default') for prompt in prompts ]
     
     if confirm(config, f'Do you want to set defaults for \'{format_blue(prompts_filename)}\'? '):
-        passphrase = get_encyrption_passphrase(config, prompts_filename) if 1 in encrypted_defaults else ''
+        passphrase: str = get_encyrption_passphrase(config, prompts_filename) if 1 in encrypted_defaults else ''
         prompts_with_defaults: list[dict] = [
             get_prompt_with_default(config = config, prompt = prompt, encryption_passphrase = passphrase)
             for prompt in prompts ]
@@ -80,10 +80,10 @@ def update_prompts_file_with_defaults(config: dict) -> None:
                     json.dump(updated_prompt_file_contents, prompts_file, indent = 4)
 
 def get_config_filenames(file_type: str, config_files_path: str) -> list[str]:
-    config_filenames: list = [ filename for filename in os.listdir(config_files_path)
+    config_filenames: list[str] = [ filename for filename in os.listdir(config_files_path)
         if file_type in filename
-        and 'default' not in filename 
-        and '.json' in filename ]
+        and '.json' in filename 
+        and 'default' not in filename ]
     return config_filenames
 
 def get_filename(file_type:str, config_files_path: str, quiet = False) -> str | bool | None:
@@ -103,7 +103,7 @@ def get_filename(file_type:str, config_files_path: str, quiet = False) -> str | 
             prompt: str = f'Please select a {file_type} file to load:'
             config_filename = enumerate_options(config = {}, options = config_filenames, prompt = prompt)
     else:
-        prompt = f'No {file_type} files found. Do you want to make a copy of the default {file_type} file? '
+        prompt = f'No {file_type} files found. Do you want to make a copy of the default {file_type} file \'{format_blue(default_config_filename)}\'? (\'y\' or \'n\'): '
         if confirm(config = {}, confirm_prompt = prompt):
             shutil.copyfile(default_config_file_path, custom_config_file_path)
             if not quiet:
@@ -114,7 +114,7 @@ def get_filename(file_type:str, config_files_path: str, quiet = False) -> str | 
 
     return config_filename
 
-def get_config(main_file: str, args: Namespace, quiet = True) -> dict:
+def get_config(main_file: str, args: Namespace, quiet: bool = True) -> dict:
     script_path: str = os.path.dirname(main_file)
     config_files_path: str = os.path.join(script_path, 'config')
     config_filenames: list = get_config_filenames('config', config_files_path)
@@ -145,4 +145,50 @@ def get_config(main_file: str, args: Namespace, quiet = True) -> dict:
             "config_files_path": config_files_path
             }
 
-        return finished_config
+        return finished_config  
+
+class DecryptionException(Exception):
+    pass
+
+def decrypt_prompt(config: dict, prompt: dict) -> dict:
+    passphrase = get_value_if_key_exists(config, 'passphrase')
+    salt: str = get_value_if_key_exists(prompt, 'salt')
+    default_value: str = get_value_if_key_exists(prompt, 'default_value')
+    encrypt_default: bool = is_exactly_one(get_value_if_key_exists(prompt, 'encrypt_default'))
+    if bool(salt) and bool(default_value) and bool(passphrase):
+        decrypted_default_value: str | bool = decrypt(config, salt, default_value, passphrase)
+        if bool(decrypted_default_value):
+            return dict( prompt, **{ 'default_value' : decrypted_default_value } )
+        else:
+            raise DecryptionException
+    return prompt
+
+def decrypt_prompts(config: dict) -> dict:
+    prompts_filename: str = get_value_if_key_exists(config, 'interactive_prompts_filename')
+    config_files_path: str = get_value_if_key_exists(config, 'config_files_path')
+    prompts_file_path: str = os.path.join(config_files_path, prompts_filename)
+
+    with open(prompts_file_path) as prompts_file:
+        prompts_file_contents: dict= json.load(prompts_file)
+    
+    prompts: list[dict] = get_value_if_key_exists(prompts_file_contents, 'prompts')
+    passphrase = get_value_if_key_exists(config, 'passphrase')
+    if contains_encrypted_defaults(prompts):
+        if not bool(passphrase):
+            print(f'Encrypted defaults found in {format_blue(prompts_filename)}.')
+            passphrase_prompt: str = f'Please enter the encryption passphrase'
+            config['passphrase'] = get_input(config, 'getpass', passphrase_prompt)
+        try:
+            decrypted_prompts: list[dict] = [
+                decrypt_prompt(config, prompt)
+                for prompt in prompts ]
+            return dict(prompts_file_contents, **{ 'prompts': decrypted_prompts })    
+
+        except DecryptionException:
+            print(format_red('Incorrect passphrase!'))
+            config['passphrase'] = False
+            return decrypt_prompts(config)
+
+    return prompts_file_contents
+
+    

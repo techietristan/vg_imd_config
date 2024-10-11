@@ -18,16 +18,18 @@ def confirm(config: dict = {}, confirm_prompt: str = '', error = False) -> bool:
 def get_username(config: dict) -> str:
     return input('Please enter the username: ').strip()
 
-def get_password(config: dict, quiet = False) -> str:
-    password: str = getpass('Please enter the password: ')
-    confirm_password: str = getpass('Please enter the password again: ')
+def get_password(config: dict, prompt_text: str = 'Please enter the password', confirm_input: bool = True, quiet = False) -> str:
+    password: str = getpass(f'{prompt_text}: ')
+    if bool(confirm_input):
+        confirm_password: str = getpass(f'{prompt_text} again: ')
 
-    if password == confirm_password: 
-        return password
-    else:
-        if not quiet:
-            print(format_red('Passwords do not match. Please try again.'))
-        return get_password(config)
+        if password == confirm_password: 
+            return password
+        else:
+            if not quiet:
+                print(format_red('Passwords do not match. Please try again.'))
+            return get_password(config, prompt_text, quiet)
+    return password
 
 def update_credentials(config: dict) -> None:
     username = get_username(config)
@@ -40,16 +42,12 @@ def get_credentials(config: dict) -> tuple:
         update_credentials(config)
     return config['username'], config['password']
 
-def input_with_default(prompt: str, default: str) -> str:
-    user_input = input(f'{prompt} (press ENTER to use {default}): ')
-    return default if user_input == '' else user_input
-
-def get_input(config: dict, input_type: str = 'input', formatted_prompt_text: str = '', default_value: str = '', simulated_user_input: str = ''):
+def get_input(config: dict, input_type: str = 'input', formatted_prompt_text: str = '', default_value: str = '', simulated_user_input: str = '', confirm_input: bool = True):
     match input_type:
         case 'input':
             user_input: str = input(formatted_prompt_text)      
         case 'getpass':
-            user_input = get_password(config = config, quiet = False)
+            user_input = get_password(config = config, prompt_text = formatted_prompt_text, confirm_input = confirm_input, quiet = False)
         case 'none':
             user_input = simulated_user_input
     if user_input.strip() == '':
@@ -105,10 +103,13 @@ def get_prompt_function(config: dict, input_params: dict, quiet = False):
     
     input_type: str = 'none' if bool(test) else 'getpass' if input_mode == 'getpass' else 'input'
     default_or_example: str = f'(press \'Enter\' to use \'{default_value}\')' if bool(default_value) else f'(e.g. \'{example_text}\')'
-    formatted_prompt_text = f'Please enter the {prompt_text}{default_or_example}: '
+    formatted_prompt_text: str = (f'Please enter the password (Press \'Enter\' to use the default password)' 
+        if input_mode == 'getpass' 
+        else f'Please enter the {prompt_text} {default_or_example}: ')
+    confirm_input: bool = False if input_mode == 'getpass' and bool(default_value) else True
 
     def prompt_function(config: dict = config, simulated_user_input: str = ''):
-        user_input = get_input(config = config, input_type = input_type, formatted_prompt_text = formatted_prompt_text, default_value = default_value, simulated_user_input = simulated_user_input)
+        user_input = get_input(config = config, input_type = input_type, formatted_prompt_text = formatted_prompt_text, default_value = default_value, simulated_user_input = simulated_user_input, confirm_input = confirm_input)
         formatted_user_input = format_user_input(config = config, input_params = input_params, user_input = user_input)
         is_valid_input = verify_input(config = config, input_params = input_params, user_input = user_input)
         if not is_valid_input:
@@ -127,17 +128,16 @@ def get_prompt_function(config: dict, input_params: dict, quiet = False):
 
     return prompt_function
 
-def get_next_imd_config(config: dict = {}, prompts_file_path: str = 'config/default_prompts.json'):
-    with open(prompts_file_path, 'r') as prompts_file:
-        prompts: dict = json.load(prompts_file)
-        if bool(prompts['greeting']['display']):
-            print(format_bold(prompts['greeting']['text']))
+def get_next_imd_config(config: dict, prompts: dict) -> list[dict]:
+    if bool(prompts['greeting']['display']):
+        print(format_bold(prompts['greeting']['text']))
+        prompts['greeting']['display'] = 0
 
-        imd_config_functions: list = [
-            get_prompt_function(config = config, input_params = prompt, quiet = False)
-            for prompt in prompts['prompts']
-        ]
-        next_imd_config: list = [
-            config_item(config = config) for config_item in imd_config_functions 
-        ]
+    imd_config_functions: list = [
+        get_prompt_function(config = config, input_params = prompt, quiet = False)
+        for prompt in prompts['prompts']
+    ]
+    next_imd_config: list[dict] = [
+        config_item(config = config) for config_item in imd_config_functions 
+    ]
     return next_imd_config

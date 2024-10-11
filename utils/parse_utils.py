@@ -4,6 +4,7 @@ from re import Match, Pattern
 from typing import Any
 
 from utils.format_utils import format_red
+from utils.dict_utils import get_value_if_key_exists
 
 def is_exactly(value: Any, expected_value: Any) -> bool:
     return type(value) == type(expected_value) and value == expected_value
@@ -176,3 +177,12 @@ def contains_unspecified_defaults(prompts: list[dict]) -> bool:
         has_unspecified_default(prompt)
         for prompt in prompts ]
     return any(unspecified_defaults)
+
+def has_encrypted_default(prompt: dict) -> bool:
+    encrypt_default: bool = is_exactly_one(get_value_if_key_exists(prompt, 'encrypt_default'))
+    salt: bool = bool(get_value_if_key_exists(prompt, 'salt'))
+    default_value: bool = bool(get_value_if_key_exists(prompt, 'default_value'))
+    return bool(encrypt_default and salt and default_value)
+
+def contains_encrypted_defaults(prompts: list[dict]) -> bool:
+    return bool( True in [ has_encrypted_default(prompt) for prompt in prompts ])

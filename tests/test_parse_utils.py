@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from utils.parse_utils import has_unspecified_default, contains_unspecified_defaults, is_exactly, is_exactly_zero, is_exactly_one, apply_user_input_formatting_function, is_vaild_firmware_version, is_valid_hostname, get_next_in_sequence, guess_next_hostname, parse_firmware_url, verify_input, format_user_input, apply_format_function
+from utils.parse_utils import contains_encrypted_defaults, has_encrypted_default, has_unspecified_default, contains_unspecified_defaults, is_exactly, is_exactly_zero, is_exactly_one, apply_user_input_formatting_function, is_vaild_firmware_version, is_valid_hostname, get_next_in_sequence, guess_next_hostname, parse_firmware_url, verify_input, format_user_input, apply_format_function
 
 test_config: dict = {
     "hostname_format": {
@@ -478,5 +478,58 @@ class TestContainsUnspecifiedDefaults(TestCase):
     def test_returns_true_if_list_contains_unspecified_defaults(self):
         self.assertTrue(contains_unspecified_defaults(self.mixed))
         self.assertTrue(contains_unspecified_defaults(self.unspecified))
-        
 
+class TestHasEncryptedDefault(TestCase):
+    prompt_with_encrypted_value = {
+        "encrypt_default": 1,
+        "salt": "abc123",
+        "default_value": "abc123" }
+
+    prompt_without_encrypted_value_1 = {
+        "encrypt_default": 0}
+
+    prompt_without_encrypted_value_2 = {
+        "encrypt_default": 0,
+        "salt": "",
+        "default_value": ""}
+
+
+    def test_contains_encrypted_default_salt_default(self):
+        self.assertTrue(has_encrypted_default(self.prompt_with_encrypted_value))
+    
+    def test_contains_no_encrypted_default_salt_default(self):
+        self.assertFalse(has_encrypted_default(self.prompt_without_encrypted_value_1))
+        self.assertFalse(has_encrypted_default(self.prompt_without_encrypted_value_2))
+
+class TestContainsEncryptedDefaults(TestCase):
+    prompts_with_encrypted_values = [
+        {
+            "encrypt_default": 1,
+            "salt": "abc123",
+            "default_value": "abc123"
+        },
+        {
+            "encrypt_default": 0,
+            "salt": "",
+            "default_value": ""
+        }
+    ]
+
+    prompts_without_encrypted_values = [
+        {
+            "encrypt_default": 0,
+        },
+        {
+            "encrypt_default": 0,
+            "salt": "",
+            "default_value": ""
+        }
+    ]
+
+    def test_contains_encrypted_default_salt_default(self):
+        self.assertTrue(contains_encrypted_defaults(self.prompts_with_encrypted_values))
+    
+    def test_contains_no_encrypted_default_salt_default(self):
+        self.assertFalse(contains_encrypted_defaults(self.prompts_without_encrypted_values))
+
+    

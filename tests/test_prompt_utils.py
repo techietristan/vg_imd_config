@@ -62,19 +62,6 @@ class TestGetCredentials(TestCase):
         returned_creds = utils.prompt_utils.get_credentials(self.config_with_creds)
         self.assertEqual(returned_creds, ('test_username', 'test_password'))
 
-class TestInputWithDefault(TestCase):
-    @mock.patch('utils.prompt_utils.input', create = True)
-    def test_input_with_default_returns_default(self, mock_input):
-        mock_input.side_effect = ['']
-        returned_value = utils.prompt_utils.input_with_default('prompt', 'default_value')
-        self.assertEqual('default_value', returned_value)
-
-    @mock.patch('utils.prompt_utils.input', create = True)
-    def test_input_with_default_returns_input(self, mock_input):
-        mock_input.side_effect = ['user_input']
-        returned_value = utils.prompt_utils.input_with_default('prompt', 'default_value')
-        self.assertEqual('user_input', returned_value)
-
 class TestGetInput(TestCase):
     def test_get_input_none(self):
         test_input = utils.prompt_utils.get_input(config = {}, input_type = 'none', simulated_user_input = 'test_input' )
