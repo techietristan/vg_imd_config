@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from utils.parse_utils import contains_encrypted_defaults, has_encrypted_default, has_unspecified_default, contains_unspecified_defaults, is_exactly, is_exactly_zero, is_exactly_one, apply_user_input_formatting_function, is_vaild_firmware_version, is_valid_hostname, get_next_in_sequence, guess_next_hostname, parse_firmware_url, verify_input, format_user_input, apply_format_function
+from utils.parse_utils import contains_encrypted_defaults, has_encrypted_default, has_unspecified_default, contains_unspecified_defaults, is_exactly, is_exactly_zero, is_exactly_one, is_boolean_false, is_boolean_true, apply_user_input_formatting_function, is_vaild_firmware_version, is_valid_hostname, get_next_in_sequence, guess_next_hostname, parse_firmware_url, verify_input, format_user_input, apply_format_function
 
 test_config: dict = {
     "hostname_format": {
@@ -10,8 +10,8 @@ test_config: dict = {
     }
 }
 
-falsy_values: list = [[], (), {}, set(), "", range(0), 0.0, 0j, None, False]
-truthy_values: list = [[''], (''), 'string', set(''), dict({'key': 'value'}), 2, 3, True]
+falsy_values: list = [[], (), {}, set(), "", range(0), 0.0, 0j, None]
+truthy_values: list = [[''], (''), 'string', set(''), dict({'key': 'value'}), 2, 3]
 
 class TestIsExactly(TestCase):
     def test_is_exactly_returns_false_if_truthy_other_than_integer_one(self):
@@ -27,17 +27,31 @@ class TestIsExactly(TestCase):
 
 class TestIsExactlyZero(TestCase):
     def test_is_exactly_zero_returns_false_if_falsy_other_than_integer_zero(self):
-        for falsy_value in falsy_values:
+        for falsy_value in falsy_values + [ False ]:
             self.assertFalse(is_exactly_zero(falsy_value))
     def test_is_exactly_zero_returns_true_if_integer_zero(self):
             self.assertTrue(is_exactly_zero(0))
 
 class TestIsExactlyOne(TestCase):
     def test_is_exactly_returns_false_if_truthy_other_than_integer_one(self):
-        for truthy_value in truthy_values:
+        for truthy_value in truthy_values + [ True ]:
             self.assertFalse(is_exactly_one(truthy_value))
     def test_is_exactly_returns_true_if_integer_one(self):
             self.assertTrue(is_exactly_one(1))
+
+class TestIsBooleanFalse(TestCase):
+    def test_is_boolean_true_returns_false_on_all_other_falsyy_values(self):
+        for falsy_value in falsy_values:
+            self.assertFalse(is_boolean_false(falsy_value))
+    def test_is_boolean_true_returns_true(self):
+            self.assertTrue(is_boolean_false(False)) 
+
+class TestIsBooleanTrue(TestCase):
+    def test_is_boolean_true_returns_false_on_all_other_truthy_values(self):
+        for truthy_value in truthy_values:
+            self.assertFalse(is_boolean_true(truthy_value))
+    def test_is_boolean_true_returns_true(self):
+            self.assertTrue(is_boolean_true(True))       
 
 class TestIsValidFirmwareVersion(TestCase):
 
@@ -381,16 +395,16 @@ class TestFormatUserInput(TestCase):
 
 
 class TestApplyFormatFunction(TestCase):
-    test_formatter: dict = {
+    test_string_formatter: dict = {
             "config-item": "location",
             "config-item-name": "Rack Location",
             "api_path": "conf/contact",
             "post_keys": ["description"],
-            "format_functions": [[ "apply_template", "R{row}-{rack}/{pdu_letter}", ["row", "rack", "pdu_letter"] ]],
+            "format_functions": [[ "apply_string_template", "R{row}-{rack}/{pdu_letter}", ["row", "rack", "pdu_letter"] ]],
             "test": 0
     }
 
-    test_parsed_promts: list[dict] = [
+    test_string_parsed_promts: list[dict] = [
         {
             "config_item": "row",
             "value": "04",
@@ -407,10 +421,43 @@ class TestApplyFormatFunction(TestCase):
 
     expected_formatted_string: str = "R04-04/A"
 
-    def test_apply_format_function_apply_template(self):
-        format_function: list = self.test_formatter['format_functions'][0]
-        formatted_string = apply_format_function({}, format_function, self.test_parsed_promts)
+    def test_apply_format_function_apply_string_template(self):
+        format_function: list = self.test_string_formatter['format_functions'][0]
+        formatted_string = apply_format_function({}, format_function, self.test_string_parsed_promts)
         self.assertEqual(formatted_string, self.expected_formatted_string)
+
+    test_json_formatter: dict = {
+            "config-item": "ntp",
+            "config-item-name": "NTP Servers",
+            "cmd": "set",
+            "json": {"description": "{location}"},
+            "format_functions": [[ "build_json", ["ntpServer1", "ntpServer2"], ["primary_ntp", "secondary_ntp"]]],
+            "api_calls": [
+                {
+                    "method":   "post",
+                    "api_path": "conf/contact/",
+                    "json":     {}
+                }
+            ]
+        }
+    
+    test_json_parsed_promts: list[dict] = [
+        {
+            "config_item": "primary_ntp",
+            "value": "test.primary_ntp.net",
+        },
+        {
+            "config_item": "secondary_ntp",
+            "value": "test.secondary_ntp.net",
+        },
+    ]
+
+    expected_formatted_json: dict = {"ntpServer1": "test.primary_ntp.net", "ntpServer2": "test.secondary_ntp.net"}
+
+    def test_apply_format_function_build_json(self):
+        format_function: list = self.test_json_formatter['format_functions'][0]
+        formatted_json = apply_format_function({}, format_function, self.test_json_parsed_promts)
+        self.assertDictEqual(formatted_json, self.expected_formatted_json)
 
 class TestHasUnspecifiedDefault(TestCase):
     unspecified_default_1: dict = {

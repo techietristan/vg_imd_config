@@ -8,12 +8,18 @@ from utils.dict_utils import get_value_if_key_exists
 
 def is_exactly(value: Any, expected_value: Any) -> bool:
     return type(value) == type(expected_value) and value == expected_value
-
+    
 def is_exactly_zero(value: Any) -> bool:
     return is_exactly(value, 0)
 
 def is_exactly_one(value: Any) -> bool:
     return is_exactly(value, 1)
+
+def is_boolean_false(value: Any) -> bool:
+    return is_exactly(value, False)
+
+def is_boolean_true(value: Any) -> bool:
+    return is_exactly(value, True)
 
 def is_valid(config: dict, regex: str, string: str) -> bool: 
     if type(string) != str:
@@ -153,14 +159,25 @@ def format_user_input(config: dict, input_params: dict, user_input: str) -> str:
     else:
         return stripped_user_input
 
-def apply_format_function(config: dict, format_function: list, parsed_prompt_responses: dict) -> str:
+def apply_format_function(config: dict, format_function: list, parsed_prompt_responses: dict) -> str | dict:
+    prompt_responses: dict = { response['config_item'] : response['value'] for response in parsed_prompt_responses }
+   
     match format_function[0]:
-        case 'apply_template':
+        case 'apply_string_template':
             format_function_template: str = format_function[1]
             format_function_keys: list = [ format_function_key for format_function_key in format_function[2] ]
-            prompt_responses: dict = { response['config_item'] : response['value'] for response in parsed_prompt_responses }
+            
             formatted_string: str = format_function_template.format(**prompt_responses)
             return formatted_string
+        case 'build_json':
+            json_keys: list[str] = format_function[1]
+            config_items: list[str] = format_function[2]
+            response_values: list[str] = [ prompt_responses[config_item] for config_item in config_items ]
+
+            formatted_json: dict = {
+                json_key: response_values[index]
+                for index, json_key in enumerate(json_keys) }
+            return formatted_json
     return ''
 
 def has_unspecified_default(prompt: dict) -> bool:

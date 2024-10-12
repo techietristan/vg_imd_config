@@ -1,5 +1,5 @@
 {
-    "version": "1.0",
+    "version": "0.1",
     "greeting": {
         "text": "\nWelcome to the Vertiv Geist IMD Configuration Script!\n",
         "display": 1
@@ -15,10 +15,8 @@
             "input_mode": "input",
             "unique_value": 1,
             "api_paths": [""],
-            "default_value": "",
             "empty_allowed": 0,
-            "required": 1,
-            "test": 0
+            "required": 1
         },
         {
             "config_item": "rack",
@@ -30,10 +28,8 @@
             "input_mode": "input",
             "unique_value": 1,
             "api_paths": [""],
-            "default_value": "",
             "empty_allowed": 0,
-            "required": 1,
-            "test": 0
+            "required": 1
         },
         {
             "config_item": "pdu_letter",
@@ -47,8 +43,7 @@
             "api_paths": [""],
             "default_value": "a",
             "empty_allowed": 0,
-            "required": 1,
-            "test": 0
+            "required": 1
         },
         {
             "config_item": "imd_hostname",
@@ -57,16 +52,26 @@
             "example_text": "ab-0123456-ps-b1",
             "verify_functions": [["is_hostname"]],
             "format_functions": [[]],
-            "default_value": "",
             "input_mode": "input",
             "unique_value": 1,
+            "api_calls": [
+                {
+                    "method":   "post",
+                    "api_path": "conf/system/",
+                    "json":     {"label": "{imd_hostname}"}
+                },
+                {
+                    "method":   "post",
+                    "api_path": "conf/system/",
+                    "json":     {"hostname": "{imd_hostname}"}
+                }
+            ],
             "api_paths": ["conf/system/"],
             "http_method": "post",
             "cmd": "set",
             "json": {"hostname": "{imd_hostname}"},
             "empty_allowed": 0,
-            "required": 1,
-            "test": 0
+            "required": 1
         },
         {
             "config_item": "primary_ntp",
@@ -83,8 +88,7 @@
             "api_paths": [""],
             "cmd": "set",
             "empty_allowed": 0,
-            "required": 1,
-            "test": 0
+            "required": 1
         },
         {
             "config_item": "secondary_ntp",
@@ -101,8 +105,7 @@
             "api_paths": [""],
             "cmd": "set",
             "empty_allowed": 0,
-            "required": 1,
-            "test": 0
+            "required": 1
         },
         {
             "config_item": "username",
@@ -118,8 +121,7 @@
             "default_value": "",
             "api_paths": ["auth/{username}"],
             "empty_allowed": 0,
-            "required": 1,
-            "test": 0
+            "required": 1
         },
         {
             "config_item": "password",
@@ -135,8 +137,7 @@
             "default_value": "",
             "api_paths": [""],
             "empty_allowed": 0,
-            "required": 1,
-            "test": 0
+            "required": 1
         }
     ],
 
@@ -144,13 +145,91 @@
         {
             "config-item": "location",
             "config-item-name": "Rack Location",
-            "api_paths": ["conf/contact"],
-            "post_keys": ["description"],
-            "http_method": "post",
             "cmd": "set",
             "json": {"description": "{location}"},
-            "format_functions": [[ "apply_template", "R{row}-{rack}/{pdu_letter}", ["row", "rack", "pdu_letter"]]],
-            "test": 0
+            "format_functions": [[ "apply_string_template", "R{row}-{rack}/{pdu_letter}", ["row", "rack", "pdu_letter"]]],
+            "api_calls": [
+                {
+                    "method":   "post",
+                    "api_path": "conf/contact/",
+                    "json":     {"description": "{formatted_output}"}
+                }
+            ]
+        },
+        {
+            "config-item": "ntp",
+            "config-item-name": "NTP Servers",
+            "cmd": "set",
+            "json": {"description": "{location}"},
+            "format_functions": [[ "build_json", ["ntpServer1", "ntpServer2]"], ["primary_ntp", "secondary_ntp"]]],
+            "api_calls": [
+                {
+                    "method":   "post",
+                    "api_path": "conf/contact/",
+                    "json":     {}
+                }
+            ]
+        }
+    ],
+
+    "defaults": [
+        {
+            "config-item": "dns_1",
+            "config-item-name": "DNS 1",
+            "api_calls": [
+                {
+                    "method":   "post",
+                    "api_path": "network/ethernet/dns/1",
+                    "cmd":      "del"
+                }
+            ]
+        },
+        {
+            "config-item": "dns_0",
+            "config-item-name": "DNS 0",
+            "api_calls": [
+                {
+                    "method":   "post",
+                    "api_path": "network/ethernet/dns/0",
+                    "cmd":      "del"
+                }
+            ]
+        },
+        {
+            "config-item": "snmp",
+            "config-item-name": "snmp",
+            "api_calls": [
+                {
+                    "method":   "post",
+                    "api_path": "snmp",
+                    "cmd":      "set",
+                    "data":     {"v1v2cEnabled": "false", "v3Enabled": "false"}
+                }
+            ]
+        },
+        {
+            "config-item": "dhcp",
+            "config-item-name": "DHCP",
+            "api_calls": [
+                {
+                    "method":   "post",
+                    "api_path": "conf/contact",
+                    "cmd":      "set",
+                    "data":     {"label": "Bridge 0", "dhcpOn": "true", "enabled": "true"}
+                }
+            ]
+        },
+        {
+            "config-item": "static_ip",
+            "config-item-name": "Static IP",
+            "api_calls": [
+                {
+                    "method":   "post",
+                    "api_path": "network/ethernet/address/0",
+                    "cmd":      "del",
+                    "data":     {"label": "Bridge 0", "dhcpOn": "true", "enabled": "true"}
+                }
+            ]
         }
     ]
 }

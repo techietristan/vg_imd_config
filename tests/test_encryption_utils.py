@@ -1,7 +1,7 @@
 from unittest import TestCase
 from cryptography.fernet import Fernet
 
-from utils.encryption_utils import calculate_key, encrypt, decrypt
+from utils.encryption_utils import calculate_key, encrypt, decrypt, decrypt_prompt, DecryptionException
 
 test_config: dict = {'encryption_iterations': 64}
 test_passphrase: str = 'test_passphrase'
@@ -38,6 +38,52 @@ class Test_Decrypt(TestCase):
         salt, encrypted_text = encrypt(test_config, 'bad_passphrase', test_text_to_encrypt)
         decrypted_text = decrypt(test_config, salt, encrypted_text, test_passphrase)
         self.assertFalse(decrypted_text)
+
+class TestDecryptPrompt(TestCase):
+    test_string: str = "test_string"
+    test_passphrase: str = "test_passphrase"
+    invalid_passphrase: str = "invalid_passphrase"
+    test_salt, test_encrypted_string = encrypt(test_config, test_passphrase, test_string)
+
+    test_config: dict = { 
+        "encryption_iterations": 64,
+        "passphrase": test_passphrase
+    }
+
+    invalid_test_config: dict = { 
+        "encryption_iterations": 64,
+        "passphrase": invalid_passphrase
+    }
+
+    valid_encrypted_prompt: dict = {
+        "salt": test_salt,
+        "default_value": test_encrypted_string,
+        "encrypt_default": 1 
+    }
+
+    invalid_encrypted_prompt: dict = {
+        "default_value": test_encrypted_string,
+        "encrypt_default": 1 
+    }
+
+    expected_decrypted_prompt: dict = {
+        "salt": test_salt,
+        "default_value": test_string,
+        "encrypt_default": 1 
+    }
+
+    def test_decrypt_prompt_valid_input(self):
+        returned_prompt: dict = decrypt_prompt(self.test_config, self.valid_encrypted_prompt)
+        self.assertDictEqual(returned_prompt, self.expected_decrypted_prompt)
+        
+    def test_decrypt_prompt_invalid_input_returns_unaltered_prompt(self):
+        returned_prompt: dict = decrypt_prompt(self.invalid_test_config, self.invalid_encrypted_prompt)
+        self.assertDictEqual(returned_prompt, self.invalid_encrypted_prompt)
+
+    def test_decrypt_prompt_invalid_passphrase_raises_exception(self):
+        with self.assertRaises(DecryptionException):
+            decrypt_prompt(self.invalid_test_config, self.valid_encrypted_prompt)
+
 
 
 

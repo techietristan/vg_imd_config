@@ -41,16 +41,15 @@ def decrypt(config: dict, salt: str, encrypted_text: str, passphrase: str) -> st
         decrypted_text: str = decryption_key.decrypt(bytes.fromhex(encrypted_text)).decode(encoding_format)
 
         return decrypted_text
-
-    except InvalidToken as token_error:
         
+    except InvalidToken as token_error:   
         return False
 
 class DecryptionException(Exception):
     pass
 
 def decrypt_prompt(config: dict, prompt: dict) -> dict:
-    passphrase = get_value_if_key_exists(config, 'passphrase')
+    passphrase: str = get_value_if_key_exists(config, 'passphrase')
     salt: str = get_value_if_key_exists(prompt, 'salt')
     default_value: str = get_value_if_key_exists(prompt, 'default_value')
     encrypt_default: bool = is_exactly_one(get_value_if_key_exists(prompt, 'encrypt_default'))

@@ -1,8 +1,10 @@
+from utils.dict_utils import get_value_if_key_exists
 from utils.format_utils import format_bold, format_red, clear_line
-from utils.parse_utils import guess_next_hostname, verify_input, format_user_input, is_exactly_one
+from utils.parse_utils import guess_next_hostname, verify_input, format_user_input, is_exactly_one, is_boolean_false
 
 import json
 from getpass import getpass
+from typing import Callable
 
 def confirm(config: dict = {}, confirm_prompt: str = '', error = False) -> bool:
     prompt = format_red(confirm_prompt) if error else confirm_prompt
@@ -42,7 +44,13 @@ def get_credentials(config: dict) -> tuple:
         update_credentials(config)
     return config['username'], config['password']
 
-def get_input(config: dict, input_type: str = 'input', formatted_prompt_text: str = '', default_value: str = '', simulated_user_input: str = '', confirm_input: bool = True):
+def get_input(
+        config: dict, 
+        input_type: str = 'input', 
+        formatted_prompt_text: str = '', 
+        default_value: str = '', 
+        simulated_user_input: str = '', 
+        confirm_input: bool = True):
     match input_type:
         case 'input':
             user_input: str = input(formatted_prompt_text)      
@@ -62,7 +70,7 @@ def get_input(config: dict, input_type: str = 'input', formatted_prompt_text: st
         print(format_red('Invalid input. Please enter a valid value.'))
         return get_input(config, formatted_prompt_text, default_value, simulated_user_input)
 
-def validate_selection(options: list, selection: str = '') -> int:
+def validate_selection(options: list[str], selection: str = '') -> int:
     if not bool(selection):
         selection = get_input({}).strip()
     number_of_options: int = len(options)
@@ -86,47 +94,48 @@ def enumerate_options(config: dict, options: list[str], prompt: str = '', quiet 
     selection_index: int = validate_selection(options)
     return options[selection_index]
        
-def get_prompt_function(config: dict, input_params: dict, quiet = False):
+def get_prompt_function(config: dict, input_params: dict, quiet = False) -> Callable | bool:
     try:
         config_item =       input_params['config_item']
         config_item_name =  input_params['config_item_name']
-        input_mode =        input_params['input_mode']
         prompt_text =       input_params['prompt_text']
         example_text =      input_params['example_text']
-        default_value =     input_params['default_value']
-        api_paths =         input_params['api_paths']
-        test =              input_params['test']
-    except KeyError as error:
+        default_value =     get_value_if_key_exists(input_params, 'default_value')
+        input_mode =        get_value_if_key_exists(input_params, 'input_mode')
+        api_calls =         get_value_if_key_exists(input_params, 'api_calls')
+        test =              get_value_if_key_exists(input_params, 'test')
+        
+        input_type: str = 'none' if bool(test) else 'getpass' if input_mode == 'getpass' else 'input'
+        default_or_example: str = f'(press \'Enter\' to use \'{default_value}\')' if bool(default_value) else f'(e.g. \'{example_text}\')'
+        formatted_prompt_text: str = (f'Please enter the password (Press \'Enter\' to use the default password)' 
+            if input_mode == 'getpass' 
+            else f'Please enter the {prompt_text} {default_or_example}: ')
+        confirm_input: bool = False if input_mode == 'getpass' and bool(default_value) else True
+
+        def prompt_function(config: dict = config, simulated_user_input: str = ''):
+            user_input = get_input(config = config, input_type = input_type, formatted_prompt_text = formatted_prompt_text, default_value = default_value, simulated_user_input = simulated_user_input, confirm_input = confirm_input)
+            formatted_user_input = format_user_input(config = config, input_params = input_params, user_input = user_input)
+            is_valid_input = verify_input(config = config, input_params = input_params, user_input = user_input)
+            if not is_valid_input:
+                clear_line()
+                if not quiet:
+                    invalid_input_warning: str = 'Invalid Password.' if input_type == 'getpass' else f'Invalid Input:\'{user_input}\''
+                    print(format_red(invalid_input_warning))
+                return prompt_function(config = config, simulated_user_input = simulated_user_input)
+            return {
+                "config_item": config_item,
+                "config_item_name": config_item_name,
+                "api_calls": api_calls if bool(api_calls) else [],
+                "value": formatted_user_input,
+                "test": test if not is_boolean_false(test) else 0
+            }
+
+        return prompt_function
+
+    except KeyError as key_error:
         if not quiet:
-            print(format_red(f'Invalid Prompt Input: {error}.'))
+            print(format_red(f'The prompts file is missing required keys: {key_error}'))
         return False
-    
-    input_type: str = 'none' if bool(test) else 'getpass' if input_mode == 'getpass' else 'input'
-    default_or_example: str = f'(press \'Enter\' to use \'{default_value}\')' if bool(default_value) else f'(e.g. \'{example_text}\')'
-    formatted_prompt_text: str = (f'Please enter the password (Press \'Enter\' to use the default password)' 
-        if input_mode == 'getpass' 
-        else f'Please enter the {prompt_text} {default_or_example}: ')
-    confirm_input: bool = False if input_mode == 'getpass' and bool(default_value) else True
-
-    def prompt_function(config: dict = config, simulated_user_input: str = ''):
-        user_input = get_input(config = config, input_type = input_type, formatted_prompt_text = formatted_prompt_text, default_value = default_value, simulated_user_input = simulated_user_input, confirm_input = confirm_input)
-        formatted_user_input = format_user_input(config = config, input_params = input_params, user_input = user_input)
-        is_valid_input = verify_input(config = config, input_params = input_params, user_input = user_input)
-        if not is_valid_input:
-            clear_line()
-            if not quiet:
-                invalid_input_warning: str = 'Invalid Password.' if input_type == 'getpass' else f'Invalid Input:\'{user_input}\''
-                print(format_red(invalid_input_warning))
-            return prompt_function(config = config, simulated_user_input = simulated_user_input)
-        return {
-            "config_item": config_item,
-            "config_item_name": config_item_name,
-            "api_paths": api_paths,
-            "value": formatted_user_input,
-            "test": test
-        }
-
-    return prompt_function
 
 def get_next_imd_config(config: dict, prompts: dict) -> list[dict]:
     if bool(prompts['greeting']['display']) and is_exactly_one(config['display_greeting']):

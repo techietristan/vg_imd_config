@@ -70,6 +70,13 @@ class TestGetInput(TestCase):
         test_input = utils.prompt_utils.get_input(config = {}, input_type = 'none', default_value = 'default_value', simulated_user_input = '' )
         self.assertEqual(test_input, 'default_value')
 
+class TestValidateSelection(TestCase):
+    test_options: list[str] = [ 'option_1', 'option_2', 'option_3' ]
+
+    def test_validate_selection_valid(self):
+        test_selection: int = utils.prompt_utils.validate_selection(self.test_options, '2')
+        self.assertEqual(test_selection, 1 )
+
 class TestGetPromptFunction(TestCase):
     def test_get_prompt_function_zfill(self):
         input_params = {
@@ -81,7 +88,7 @@ class TestGetPromptFunction(TestCase):
             "format_functions": [["zfill", 2]],
             "input_mode": "input",
             "default_value": "",
-            "api_paths": [""],
+            "api_calls": [""],
             "empty_allowed": 0,
             "required": 1,
             "test": 1
@@ -89,7 +96,7 @@ class TestGetPromptFunction(TestCase):
         expected_return_dict = {
             "config_item": "row",
             "config_item_name": "Rack Row",
-            "api_paths": [""],
+            "api_calls": [""],
             "value": "07",
             "test": 1
         }  
@@ -106,7 +113,7 @@ class TestGetPromptFunction(TestCase):
             "format_functions": [["lower"]],
             "input_mode": "input",
             "default_value": "",
-            "api_paths": [""],
+            "api_calls": [""],
             "empty_allowed": 0,
             "required": 1,
             "test": 1
@@ -114,7 +121,7 @@ class TestGetPromptFunction(TestCase):
         expected_return_dict = {
             "config_item": "pdu_letter",
             "config_item_name": "PDU Letter",
-            "api_paths": [""],
+            "api_calls": [""],
             "value": "b",
             "test": 1
         }  
@@ -131,7 +138,7 @@ class TestGetPromptFunction(TestCase):
             "format_functions": [["zfill", 2]],
             "input_mode": "input",
             "default_value": "",
-            "api_paths": [""],
+            "api_calls": [""],
             "empty_allowed": 0,
             "required": 1,
             "test": 0
@@ -139,15 +146,14 @@ class TestGetPromptFunction(TestCase):
         returned_function = utils.prompt_utils.get_prompt_function({}, input_params, quiet = True)
         self.assertTrue(callable(returned_function))
 
-    def test_get_prompt_function_missing_keys(self):
+    def test_get_prompt_function_missing_required_keys(self):
         input_params = {
-            "config_item": "row",
             "config_item_name": "Rack Row",
             "prompt_text": "rack row",
             "example_text": "7",
             "verify_functions": [["is_int"]],
             "format_functions": [["zfill", 2]],
-            "api_paths": [""],
+            "api_calls": [""],
             "empty_allowed": 0,
             "required": 1,
             "test": 1

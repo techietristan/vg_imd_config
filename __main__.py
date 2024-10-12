@@ -32,6 +32,8 @@ def main():
             next_imd_config: list[dict] = get_next_imd_config(config, prompts)
             config['current_imd_config'] = next_imd_config
 
+            print(config)
+
     except KeyboardInterrupt:
         print(format_yellow('\nKeyboard Interrupt Received. Exiting Script'))
         exit_with_code(130)
