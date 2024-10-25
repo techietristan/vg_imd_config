@@ -61,9 +61,6 @@
             "unique_value": 0,
             "encrypt_default": 1,
             "salt": "",
-            "default_value": "",
-            "api_paths": [""],
-            "cmd": "set",
             "empty_allowed": 0
         },
         {
@@ -77,9 +74,6 @@
             "unique_value": 0,
             "encrypt_default": 1,
             "salt": "",
-            "default_value": "",
-            "api_paths": [""],
-            "cmd": "set",
             "empty_allowed": 0
         },
         {
@@ -115,7 +109,7 @@
     "formatters": [
         {
             "config_item": "credentials",
-            "config-item-name": "Username and Password",
+            "config_item_name": "Username and Password",
             "format_functions": [[ "apply_string_template", "{{'username': '{username}', 'password': '{password}', 'enabled': 'true', 'contorol': 'true', 'admin': 'true'}}"]],
             "api_calls": [
                 {
@@ -127,7 +121,7 @@
         },
         {
             "config_item": "label",
-            "config-item-name": "Hostname Label",
+            "config_item_name": "Hostname Label",
             "format_functions": [[ "apply_string_template", "{{'label': '{imd_hostname}', 'hostname': '{imd_hostname}' }}"]],
             "api_calls": [
                 {
@@ -139,7 +133,7 @@
         },
         {
             "config_item": "ntp",
-            "config-item-name": "NTP Servers",
+            "config_item_name": "NTP Servers",
             "format_functions": [[ "apply_string_template", "{{'ntpServer1': '{primary_ntp}', 'ntpServer2': '{secondary_ntp}'}}"]],
             "api_calls": [
                 {
@@ -151,7 +145,7 @@
         },
         {
             "config_item": "location",
-            "config-item-name": "Rack Location",
+            "config_item_name": "Rack Location",
             "format_functions": [[ "apply_string_template", "R{row}-{rack}/{pdu_letter}"]],
             "api_calls": [
                 {
@@ -166,7 +160,7 @@
     "defaults": [
         {
             "config_item": "ipv6",
-            "config-item-name": "IPv6",
+            "config_item_name": "IPv6",
             "api_calls": [
                 {
                     "method":   "post",
@@ -178,7 +172,7 @@
         },
         {
             "config_item": "stp",
-            "config-item-name": "STP",
+            "config_item_name": "STP",
             "api_calls": [
                 {
                     "method":   "post",
@@ -190,7 +184,7 @@
         },
         {
             "config_item": "dns_1",
-            "config-item-name": "DNS 1",
+            "config_item_name": "DNS 1",
             "api_calls": [
                 {
                     "method":   "post",
@@ -201,7 +195,7 @@
         },
         {
             "config_item": "dns_0",
-            "config-item-name": "DNS 0",
+            "config_item_name": "DNS 0",
             "api_calls": [
                 {
                     "method":   "post",
@@ -212,7 +206,7 @@
         },
         {
             "config_item": "snmp",
-            "config-item-name": "snmp",
+            "config_item_name": "snmp",
             "api_calls": [
                 {
                     "method":   "post",
@@ -224,7 +218,7 @@
         },
         {
             "config_item": "dhcp",
-            "config-item-name": "DHCP",
+            "config_item_name": "DHCP",
             "api_calls": [
                 {
                     "method":   "post",
@@ -236,7 +230,7 @@
         },
         {
             "config_item": "static_ip",
-            "config-item-name": "Static IP",
+            "config_item_name": "Static IP",
             "api_calls": [
                 {
                     "method":   "post",

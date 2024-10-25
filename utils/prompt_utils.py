@@ -94,7 +94,7 @@ def enumerate_options(config: dict, options: list[str], prompt: str = '', quiet 
     selection_index: int = validate_selection(options)
     return options[selection_index]
        
-def get_prompt_function(config: dict, input_params: dict, quiet = False) -> Callable | bool:
+def get_prompt_function(config: dict, input_params: dict, quiet: bool = False) -> Callable | bool:
     try:
         config_item =       input_params['config_item']
         config_item_name =  input_params['config_item_name']
@@ -124,8 +124,6 @@ def get_prompt_function(config: dict, input_params: dict, quiet = False) -> Call
                 return prompt_function(config = config, simulated_user_input = simulated_user_input)
             return {
                 "config_item": config_item,
-                "config_item_name": config_item_name,
-                "api_calls": api_calls if bool(api_calls) else [],
                 "value": formatted_user_input,
                 "test": test if not is_boolean_false(test) else 0
             }
@@ -137,16 +135,15 @@ def get_prompt_function(config: dict, input_params: dict, quiet = False) -> Call
             print(format_red(f'The prompts file is missing required keys: {key_error}'))
         return False
 
-def get_next_imd_config(config: dict, prompts: dict) -> list[dict]:
+def get_unique_config_items(config: dict, prompts: dict, quiet = False) -> list[dict]:
     if bool(prompts['greeting']['display']) and is_exactly_one(config['display_greeting']):
         print(format_bold(prompts['greeting']['text']))
         prompts['greeting']['display'] = 0
 
     imd_config_functions: list = [
-        get_prompt_function(config = config, input_params = prompt, quiet = False)
+        get_prompt_function(config = config, input_params = prompt, quiet = quiet)
         for prompt in prompts['prompts']
     ]
-    next_imd_config: list[dict] = [
-        config_item(config = config) for config_item in imd_config_functions 
-    ]
-    return next_imd_config
+    unique_config_items: list[dict] = [ config_item(config = config) for config_item in imd_config_functions ]
+
+    return unique_config_items

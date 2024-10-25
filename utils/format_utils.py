@@ -34,7 +34,7 @@ def clear_line() -> None:
     sys.stdout.write('\x1b[2K')
 
 
-def apply_user_input_formatting_function(config: dict, format_function: list, current_formatting: str) -> str:
+def apply_formatting_function(config: dict, format_function: list, current_formatting: str = '', config_items: list[dict] = [{}]) -> str:
     match format_function[0]:
         case 'zfill':
             return current_formatting.zfill(format_function[1])
@@ -42,16 +42,21 @@ def apply_user_input_formatting_function(config: dict, format_function: list, cu
             return current_formatting.lower()
         case 'upper':
             return current_formatting.upper()
+        case 'apply_string_template':
+            if bool(config_items[0]):
+                config_values: dict = { item['config_item'] : item['value'] for item in config_items }
+                format_function_template: str = format_function[1]
+                return format_function_template.format(**config_values)
     return current_formatting
 
-def apply_user_input_formatting_functions(config: dict, format_functions: list[list], next_formatting: str, iteration = 0) -> str:
+def apply_formatting_functions(config: dict, format_functions: list[list], next_formatting: str = '', config_items: list[dict] = [{}], iteration = 0) -> str:
     number_of_format_functions: int = len(format_functions)
     try:
         if iteration + 1 == number_of_format_functions:
-            return apply_user_input_formatting_function(config, format_functions[iteration], next_formatting)
+            return apply_formatting_function(config, format_functions[iteration], next_formatting, config_items)
         else:
-            next_formatting = apply_user_input_formatting_function(config, format_functions[iteration], next_formatting)
-            return apply_user_input_formatting_functions(config, format_functions, next_formatting, iteration + 1)
+            next_formatting = apply_formatting_function(config, format_functions[iteration], next_formatting, config_items)
+            return apply_formatting_functions(config, format_functions, next_formatting, config_items, iteration + 1)
     except IndexError:
         return next_formatting
 
@@ -59,16 +64,36 @@ def format_user_input(config: dict, input_params: dict, user_input: str) -> str:
     format_functions: list[list] = input_params['format_functions']
     stripped_user_input = user_input.strip()
     if bool(format_functions[0]):
-        return apply_user_input_formatting_functions(config, format_functions, stripped_user_input)
+        return apply_formatting_functions(config, format_functions, stripped_user_input)
     else:
         return stripped_user_input
 
-def apply_format_function(config: dict, format_function: list, parsed_prompt_responses: list[dict]) -> str | dict:
-    prompt_responses: dict = { response['config_item'] : response['value'] for response in parsed_prompt_responses }
-   
-    match format_function[0]:
-        case 'apply_string_template':
-            format_function_template: str = format_function[1]
-            formatted_text: str = format_function_template.format(**prompt_responses)
-            
-    return formatted_text
+def get_formatted_config_items(config: dict, prompts: dict, config_items: list[dict]) -> list[dict]:
+    formatters: list[dict] = prompts['formatters']
+    formatted_config_items: list[dict] = [
+        {  
+            'config_item': formatter['config_item'],
+            'config_item_name': formatter['config_item_name'],
+            'api_calls': [ {
+                'cmd': api_call['cmd'],
+                'method': api_call['method'],
+                'api_path': api_call['api_path'],
+                'data': apply_formatting_functions(config, formatter['format_functions'], '', config_items)
+            } for api_call in formatter['api_calls'] ]
+        }
+        for formatter in formatters ]
+
+    return formatted_config_items
+
+def get_ordered_api_calls(config: dict, prompts: dict, config_items: list[dict]) -> list[dict]:
+    api_call_sequence: list[str] = prompts['api_call_sequence']
+    formatted_config_items: list[dict] = get_formatted_config_items(config, prompts, config_items)
+    defaults: list[dict] = prompts['defaults']
+    api_calls: list[dict] = formatted_config_items + defaults
+    ordered_api_calls: list[dict] = [
+        api_call for api_call in api_calls 
+        for config_item_name in api_call_sequence 
+        if api_call['config_item'] == config_item_name
+    ]
+
+    return ordered_api_calls

@@ -1,19 +1,80 @@
 from unittest import TestCase
 
-from utils.format_utils import apply_user_input_formatting_function, format_user_input, apply_format_function
+from utils.format_utils import apply_formatting_function, apply_formatting_functions, format_user_input, get_formatted_config_items
 
-class TestApplyUserInputFormattingFunction(TestCase):
+class TestApplyFormattingFunction(TestCase):
     def test_apply_user_input_formatting_function_zfill(self):
         self.assertEqual('test', 'test')
-        formatting_function_result = apply_user_input_formatting_function({}, ['zfill', 6], 'abc')
+        formatting_function_result = apply_formatting_function({}, ['zfill', 6], 'abc')
         self.assertEqual('000abc', formatting_function_result)
     def test_apply_user_input_formatting_function_lower(self):
-        formatting_function_result = apply_user_input_formatting_function({}, ['upper'], 'test string')
+        formatting_function_result = apply_formatting_function({}, ['upper'], 'test string')
         self.assertEqual('TEST STRING', formatting_function_result)
     def test_apply_user_input_formatting_function_upper(self):
-        formatting_function_result = apply_user_input_formatting_function({}, ['lower'], 'TEST STRING')
+        formatting_function_result = apply_formatting_function({}, ['lower'], 'TEST STRING')
         self.assertEqual('test string', formatting_function_result)
 
+    test_string_formatter: dict = {
+            "config-item": "location",
+            "config-item-name": "Rack Location",
+            "api_path": "conf/contact",
+            "post_keys": ["description"],
+            "format_functions": [[ "apply_string_template", "R{row}-{rack}/{pdu_letter}"]],
+            "test": 0
+    }
+
+    test_string_parsed_promts: list[dict] = [
+        {
+            "config_item": "row",
+            "value": "04",
+        },
+        {
+            "config_item": "rack",
+            "value": "04",
+        },
+        {
+            "config_item": "pdu_letter",
+            "value": "A",
+        }
+    ]
+
+    expected_formatted_string: str = "R04-04/A"
+
+    def test_apply_format_function_apply_string_template(self):
+        format_function: list = self.test_string_formatter['format_functions'][0]
+        formatted_string = apply_formatting_function({}, format_function, '', self.test_string_parsed_promts)
+        self.assertEqual(formatted_string, self.expected_formatted_string)
+
+    test_json_formatter: dict = {
+        "config-item": "ntp",
+        "config-item-name": "NTP Servers",
+        "cmd": "set",
+        "format_functions": [[ "apply_string_template", "{{'ntpServer1': '{primary_ntp}', 'ntpServer2': '{secondary_ntp}'}}"]],
+        "api_calls": [
+            {
+                "method":   "post",
+                "api_path": "conf/contact/",
+            }
+        ]
+    }
+    
+    test_json_parsed_promt_responses: list[dict] = [
+        {
+            "config_item": "primary_ntp",
+            "value": "test.primary_ntp.net",
+        },
+        {
+            "config_item": "secondary_ntp",
+            "value": "test.secondary_ntp.net",
+        },
+    ]
+
+    expected_formatted_json: str = "{'ntpServer1': 'test.primary_ntp.net', 'ntpServer2': 'test.secondary_ntp.net'}"
+
+    def test_apply_format_function_json(self):
+        format_function: list = self.test_json_formatter['format_functions'][0]
+        formatted_json = apply_formatting_function({}, format_function, '', self.test_json_parsed_promt_responses)
+     
 class TestFormatUserInput(TestCase):
     def test_format_user_input_none(self):
         test_prompt = {'format_functions': [[]], 'empty_allowed': 0}
@@ -48,66 +109,50 @@ class TestFormatUserInput(TestCase):
         formatted_user_input = format_user_input({}, test_prompt, ' ABC')
         self.assertEqual(formatted_user_input, '000abc')  
 
-
-class TestApplyFormatFunction(TestCase):
-    test_string_formatter: dict = {
-            "config-item": "location",
-            "config-item-name": "Rack Location",
-            "api_path": "conf/contact",
-            "post_keys": ["description"],
-            "format_functions": [[ "apply_string_template", "R{row}-{rack}/{pdu_letter}"]],
-            "test": 0
-    }
-
-    test_string_parsed_promts: list[dict] = [
+class TestGetFormattedConfigItems(TestCase):
+    def test_get_formatted_config_items(self):
+        test_config_items: list[dict] = [
         {
-            "config_item": "row",
-            "value": "04",
+            "config_item": 'primary_ntp',
+            "config_item_name": "Primary NTP",
+            "value": 'test.primary_ntp.net',
+            "test": 1
         },
         {
-            "config_item": "rack",
-            "value": "04",
-        },
-        {
-            "config_item": "pdu_letter",
-            "value": "A",
-        }
+            "config_item": 'secondary_ntp',
+            "config_item_name": "Secondary NTP",
+            "value": 'test.secondary_ntp.net',
+            "test": 1
+        },        
     ]
+        test_prompts: dict = {
+        "formatters": [
+            {
+                "config_item": "ntp",
+                "config_item_name": "NTP Servers",
+                "format_functions": [[ "apply_string_template", "{{'ntpServer1': '{primary_ntp}', 'ntpServer2': '{secondary_ntp}'}}"]],
+                "api_calls": [
+                    {
+                        "cmd":      "set",
+                        "method":   "post",
+                        "api_path": "conf/contact"
+                    }
+                ]
+            },
+        ]}
 
-    expected_formatted_string: str = "R04-04/A"
-
-    def test_apply_format_function_apply_string_template(self):
-        format_function: list = self.test_string_formatter['format_functions'][0]
-        formatted_string = apply_format_function({}, format_function, self.test_string_parsed_promts)
-        self.assertEqual(formatted_string, self.expected_formatted_string)
-
-    test_json_formatter: dict = {
-            "config-item": "ntp",
-            "config-item-name": "NTP Servers",
-            "cmd": "set",
-            "format_functions": [[ "apply_string_template", "{{'ntpServer1': '{primary_ntp}', 'ntpServer2': '{secondary_ntp}'}}"]],
-            "api_calls": [
-                {
-                    "method":   "post",
-                    "api_path": "conf/contact/",
-                }
-            ]
-        }
+        expected_config_items: list[dict] = [{
+                "config_item": "ntp",
+                "config_item_name": "NTP Servers",
+                "api_calls": [
+                    {
+                        "cmd":      "set",
+                        "method":   "post",
+                        "api_path": "conf/contact",
+                        "data": "{'ntpServer1': 'test.primary_ntp.net', 'ntpServer2': 'test.secondary_ntp.net'}"
+                    }
+                ]
+        }]
+        returned_config_items = get_formatted_config_items({}, test_prompts, test_config_items)
+        self.assertDictEqual(expected_config_items[0], returned_config_items[0])
     
-    test_json_parsed_promt_responses: list[dict] = [
-        {
-            "config_item": "primary_ntp",
-            "value": "test.primary_ntp.net",
-        },
-        {
-            "config_item": "secondary_ntp",
-            "value": "test.secondary_ntp.net",
-        },
-    ]
-
-    expected_formatted_json: str = "{'ntpServer1': 'test.primary_ntp.net', 'ntpServer2': 'test.secondary_ntp.net'}"
-
-    def test_apply_format_function_build_json(self):
-        format_function: list = self.test_json_formatter['format_functions'][0]
-        formatted_json = apply_format_function({}, format_function, self.test_json_parsed_promt_responses)
-        self.assertEqual(formatted_json, self.expected_formatted_json)

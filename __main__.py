@@ -4,8 +4,8 @@ from utils.api_utils import get_firmware_version, reset_imd_to_factory_defaults,
 from utils.argument_utils import parse_args
 from utils.config_utils import get_config, update_prompts_file_with_defaults
 from utils.encryption_utils import decrypt_prompts
-from utils.format_utils import format_yellow
-from utils.prompt_utils import get_next_imd_config
+from utils.format_utils import format_yellow, get_ordered_api_calls
+from utils.prompt_utils import get_unique_config_items
 from utils.sys_utils import exit_with_code
 
 def main():
@@ -29,11 +29,10 @@ def main():
             config: dict = get_config(main_file = __file__, args = args, quiet = False)
             update_prompts_file_with_defaults(config)
             prompts: dict = decrypt_prompts(config)
-            next_imd_config: list[dict] = get_next_imd_config(config, prompts)
+            unique_config_items: list[dict] = get_unique_config_items(config, prompts)
+            ordered_api_calls = get_ordered_api_calls(config, prompts, unique_config_items)
 
-            config['current_imd_config'] = next_imd_config
-
-            print(next_imd_config)
+            print(ordered_api_calls)
 
     except KeyboardInterrupt:
         print(format_yellow('\nKeyboard Interrupt Received. Exiting Script'))

@@ -105,8 +105,6 @@ class TestGetPromptFunction(TestCase):
         }
         expected_return_dict = {
             "config_item": "row",
-            "config_item_name": "Rack Row",
-            "api_calls": [""],
             "value": "07",
             "test": 1
         }  
@@ -130,8 +128,6 @@ class TestGetPromptFunction(TestCase):
         }
         expected_return_dict = {
             "config_item": "pdu_letter",
-            "config_item_name": "PDU Letter",
-            "api_calls": [""],
             "value": "b",
             "test": 1
         }  
