@@ -53,7 +53,7 @@ def get_input(
         confirm_input: bool = True):
     match input_type:
         case 'input':
-            user_input: str = input(formatted_prompt_text)      
+            user_input: str = input(formatted_prompt_text)   
         case 'getpass':
             user_input = get_password(config = config, prompt_text = formatted_prompt_text, confirm_input = confirm_input, quiet = False)
         case 'none':
@@ -63,12 +63,12 @@ def get_input(
             return default_value
         else:
             print(format_red('Empty input is not allowed. Please enter a valid value.'))
-            return get_input(config, formatted_prompt_text, default_value, simulated_user_input)
+            return get_input(config, input_type, formatted_prompt_text, default_value, simulated_user_input, confirm_input)
     if bool(user_input):
         return user_input
     else:
         print(format_red('Invalid input. Please enter a valid value.'))
-        return get_input(config, formatted_prompt_text, default_value, simulated_user_input)
+        return get_input(config, input_type, formatted_prompt_text, default_value, simulated_user_input, confirm_input)
 
 def validate_selection(options: list[str], selection: str = '') -> int:
     if not bool(selection):
@@ -89,8 +89,8 @@ def enumerate_options(config: dict, options: list[str], prompt: str = '', quiet 
     prompt_text: str = prompt if bool(prompt) else default_prompt
     if bool(prompt) and not quiet:
         print(format_bold(prompt_text))
-    for index, option in enumerate(options, 1):
-        print(f'{index}. {option}')
+        for index, option in enumerate(options, 1):
+            print(f'{index}. {option}')
     selection_index: int = validate_selection(options)
     return options[selection_index]
        

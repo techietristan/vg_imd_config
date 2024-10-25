@@ -77,6 +77,16 @@ class TestValidateSelection(TestCase):
         test_selection: int = utils.prompt_utils.validate_selection(self.test_options, '2')
         self.assertEqual(test_selection, 1 )
 
+class TestEnumerateOptions(TestCase):
+    @mock.patch('utils.prompt_utils.input', create = True)
+    def test_enumerate_options_returns_correct_option(self, mock_input):
+        test_options: list = [
+            'option_1', 'option_2', 'option_3'
+        ]
+        mock_input.side_effect=['2']
+        returned_option = utils.prompt_utils.enumerate_options({}, test_options, '', True)
+        self.assertEqual(returned_option, 'option_2')
+
 class TestGetPromptFunction(TestCase):
     def test_get_prompt_function_zfill(self):
         input_params = {
