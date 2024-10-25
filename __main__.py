@@ -30,9 +30,10 @@ def main():
             update_prompts_file_with_defaults(config)
             prompts: dict = decrypt_prompts(config)
             next_imd_config: list[dict] = get_next_imd_config(config, prompts)
+
             config['current_imd_config'] = next_imd_config
 
-            print(config)
+            print(next_imd_config)
 
     except KeyboardInterrupt:
         print(format_yellow('\nKeyboard Interrupt Received. Exiting Script'))

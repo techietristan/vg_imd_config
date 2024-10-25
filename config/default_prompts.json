@@ -14,9 +14,7 @@
             "format_functions": [["zfill", 2]],
             "input_mode": "input",
             "unique_value": 1,
-            "api_paths": [""],
-            "empty_allowed": 0,
-            "required": 1
+            "empty_allowed": 0
         },
         {
             "config_item": "rack",
@@ -27,9 +25,7 @@
             "format_functions": [["zfill", 2]],
             "input_mode": "input",
             "unique_value": 1,
-            "api_paths": [""],
-            "empty_allowed": 0,
-            "required": 1
+            "empty_allowed": 0
         },
         {
             "config_item": "pdu_letter",
@@ -40,10 +36,8 @@
             "format_functions": [[]],
             "input_mode": "input",
             "unique_value": 1,
-            "api_paths": [""],
             "default_value": "a",
-            "empty_allowed": 0,
-            "required": 1
+            "empty_allowed": 0
         },
         {
             "config_item": "imd_hostname",
@@ -54,24 +48,7 @@
             "format_functions": [[]],
             "input_mode": "input",
             "unique_value": 1,
-            "api_calls": [
-                {
-                    "method":   "post",
-                    "api_path": "conf/system/",
-                    "json":     {"label": "{imd_hostname}"}
-                },
-                {
-                    "method":   "post",
-                    "api_path": "conf/system/",
-                    "json":     {"hostname": "{imd_hostname}"}
-                }
-            ],
-            "api_paths": ["conf/system/"],
-            "http_method": "post",
-            "cmd": "set",
-            "json": {"hostname": "{imd_hostname}"},
-            "empty_allowed": 0,
-            "required": 1
+            "empty_allowed": 0
         },
         {
             "config_item": "primary_ntp",
@@ -87,8 +64,7 @@
             "default_value": "",
             "api_paths": [""],
             "cmd": "set",
-            "empty_allowed": 0,
-            "required": 1
+            "empty_allowed": 0
         },
         {
             "config_item": "secondary_ntp",
@@ -104,8 +80,7 @@
             "default_value": "",
             "api_paths": [""],
             "cmd": "set",
-            "empty_allowed": 0,
-            "required": 1
+            "empty_allowed": 0
         },
         {
             "config_item": "username",
@@ -115,13 +90,11 @@
             "verify_functions": [["is_valid_username"]],
             "format_functions": [[]],
             "input_mode": "input",
+            "empty_allowed": 0,
             "unique_value": 0,
             "encrypt_default": 1,
             "salt": "",
-            "default_value": "",
-            "api_paths": ["auth/{username}"],
-            "empty_allowed": 0,
-            "required": 1
+            "default_value": ""
         },
         {
             "config_item": "password",
@@ -131,42 +104,60 @@
             "verify_functions": [["is_between", 1, 300]],
             "format_functions": [[]],
             "input_mode": "getpass",
+            "empty_allowed": 0,
             "unique_value": 0,
             "encrypt_default": 1,
             "salt": "",
-            "default_value": "",
-            "api_paths": [""],
-            "empty_allowed": 0,
-            "required": 1
+            "default_value": ""
         }
     ],
 
     "formatters": [
         {
-            "config-item": "location",
-            "config-item-name": "Rack Location",
-            "cmd": "set",
-            "json": {"description": "{location}"},
-            "format_functions": [[ "apply_string_template", "R{row}-{rack}/{pdu_letter}", ["row", "rack", "pdu_letter"]]],
+            "config_item": "credentials",
+            "config-item-name": "Username and Password",
+            "format_functions": [[ "apply_string_template", "{{'username': '{username}', 'password': '{password}', 'enabled': 'true', 'contorol': 'true', 'admin': 'true'}}"]],
             "api_calls": [
                 {
+                    "cmd":      "add",
                     "method":   "post",
-                    "api_path": "conf/contact/",
-                    "json":     {"description": "{formatted_output}"}
+                    "api_path": "auth"
                 }
             ]
         },
         {
-            "config-item": "ntp",
-            "config-item-name": "NTP Servers",
-            "cmd": "set",
-            "json": {"description": "{location}"},
-            "format_functions": [[ "build_json", ["ntpServer1", "ntpServer2]"], ["primary_ntp", "secondary_ntp"]]],
+            "config_item": "label",
+            "config-item-name": "Hostname Label",
+            "format_functions": [[ "apply_string_template", "{{'label': '{imd_hostname}', 'hostname': '{imd_hostname}' }}"]],
             "api_calls": [
                 {
+                    "cmd":      "set",
                     "method":   "post",
-                    "api_path": "conf/contact/",
-                    "json":     {}
+                    "api_path": "system"
+                }
+            ]
+        },
+        {
+            "config_item": "ntp",
+            "config-item-name": "NTP Servers",
+            "format_functions": [[ "apply_string_template", "{{'ntpServer1': '{primary_ntp}', 'ntpServer2': '{secondary_ntp}'}}"]],
+            "api_calls": [
+                {
+                    "cmd":      "set",
+                    "method":   "post",
+                    "api_path": "conf/contact"
+                }
+            ]
+        },
+        {
+            "config_item": "location",
+            "config-item-name": "Rack Location",
+            "format_functions": [[ "apply_string_template", "R{row}-{rack}/{pdu_letter}"]],
+            "api_calls": [
+                {
+                    "cmd":      "set",
+                    "method":   "post",
+                    "api_path": "conf/contact"
                 }
             ]
         }
@@ -174,7 +165,31 @@
 
     "defaults": [
         {
-            "config-item": "dns_1",
+            "config_item": "ipv6",
+            "config-item-name": "IPv6",
+            "api_calls": [
+                {
+                    "method":   "post",
+                    "api_path": "system",
+                    "cmd":      "set",
+                    "data":     {"ip6Enabled": "false"}
+                }
+            ]
+        },
+        {
+            "config_item": "stp",
+            "config-item-name": "STP",
+            "api_calls": [
+                {
+                    "method":   "post",
+                    "api_path": "network/ethernet/stp",
+                    "cmd":      "set",
+                    "data":     {"enabled": "false", "bridgePriority": 24576, "mode": "rstp", "maxHops": 40, "helloTime": 2, "maxAge": 40, "forwardDelay": 21}
+                }
+            ]
+        },
+        {
+            "config_item": "dns_1",
             "config-item-name": "DNS 1",
             "api_calls": [
                 {
@@ -185,7 +200,7 @@
             ]
         },
         {
-            "config-item": "dns_0",
+            "config_item": "dns_0",
             "config-item-name": "DNS 0",
             "api_calls": [
                 {
@@ -196,7 +211,7 @@
             ]
         },
         {
-            "config-item": "snmp",
+            "config_item": "snmp",
             "config-item-name": "snmp",
             "api_calls": [
                 {
@@ -208,7 +223,7 @@
             ]
         },
         {
-            "config-item": "dhcp",
+            "config_item": "dhcp",
             "config-item-name": "DHCP",
             "api_calls": [
                 {
@@ -220,16 +235,30 @@
             ]
         },
         {
-            "config-item": "static_ip",
+            "config_item": "static_ip",
             "config-item-name": "Static IP",
             "api_calls": [
                 {
                     "method":   "post",
                     "api_path": "network/ethernet/address/0",
-                    "cmd":      "del",
-                    "data":     {"label": "Bridge 0", "dhcpOn": "true", "enabled": "true"}
+                    "cmd":      "del"
                 }
             ]
         }
+
+    ],
+
+    "api_call_sequence": [
+        "credentials",
+        "label",
+        "ipv6",
+        "stp",
+        "dns_1",
+        "dns_0",
+        "snmp",
+        "ntp",
+        "dhcp",
+        "location",
+        "static_ip"
     ]
 }

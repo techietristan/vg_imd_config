@@ -1,6 +1,6 @@
 from utils.dict_utils import get_value_if_key_exists
-from utils.format_utils import format_bold, format_red, clear_line
-from utils.parse_utils import guess_next_hostname, verify_input, format_user_input, is_exactly_one, is_boolean_false
+from utils.format_utils import format_bold, format_red, format_blue, clear_line, format_user_input
+from utils.parse_utils import guess_next_hostname, verify_input, is_exactly_one, is_boolean_false
 
 import json
 from getpass import getpass
@@ -89,8 +89,8 @@ def enumerate_options(config: dict, options: list[str], prompt: str = '', quiet 
     prompt_text: str = prompt if bool(prompt) else default_prompt
     if bool(prompt) and not quiet:
         print(format_bold(prompt_text))
-    for index, option in enumerate(options):
-        print(f'{index + 1}. {option}')
+    for index, option in enumerate(options, 1):
+        print(f'{index}. {option}')
     selection_index: int = validate_selection(options)
     return options[selection_index]
        
@@ -106,8 +106,8 @@ def get_prompt_function(config: dict, input_params: dict, quiet = False) -> Call
         test =              get_value_if_key_exists(input_params, 'test')
         
         input_type: str = 'none' if bool(test) else 'getpass' if input_mode == 'getpass' else 'input'
-        default_or_example: str = f'(press \'Enter\' to use \'{default_value}\')' if bool(default_value) else f'(e.g. \'{example_text}\')'
-        formatted_prompt_text: str = (f'Please enter the password (Press \'Enter\' to use the default password)' 
+        default_or_example: str = f'(press \'Enter\' to use \'{format_blue(default_value)}\')' if bool(default_value) else f'(e.g. \'{format_blue(example_text)}\')'
+        formatted_prompt_text: str = (f'Please enter the password (Press \'Enter\' to use the {format_blue('default password')})' 
             if input_mode == 'getpass' 
             else f'Please enter the {prompt_text} {default_or_example}: ')
         confirm_input: bool = False if input_mode == 'getpass' and bool(default_value) else True

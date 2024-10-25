@@ -130,57 +130,7 @@ def verify_input(config: dict, input_params: dict, user_input: str) -> bool:
     else:
         return True
 
-def apply_user_input_formatting_function(config: dict, format_function: list, current_formatting: str) -> str:
-    match format_function[0]:
-        case 'zfill':
-            return current_formatting.zfill(format_function[1])
-        case 'lower':
-            return current_formatting.lower()
-        case 'upper':
-            return current_formatting.upper()
-    return current_formatting
-
-def apply_user_input_formatting_functions(config: dict, format_functions: list[list], next_formatting: str, iteration = 0) -> str:
-    number_of_format_functions: int = len(format_functions)
-    try:
-        if iteration + 1 == number_of_format_functions:
-            return apply_user_input_formatting_function(config, format_functions[iteration], next_formatting)
-        else:
-            next_formatting = apply_user_input_formatting_function(config, format_functions[iteration], next_formatting)
-            return apply_user_input_formatting_functions(config, format_functions, next_formatting, iteration + 1)
-    except IndexError:
-        return next_formatting
-
-def format_user_input(config: dict, input_params: dict, user_input: str) -> str:
-    format_functions: list[list] = input_params['format_functions']
-    stripped_user_input = user_input.strip()
-    if bool(format_functions[0]):
-        return apply_user_input_formatting_functions(config, format_functions, stripped_user_input)
-    else:
-        return stripped_user_input
-
-def apply_format_function(config: dict, format_function: list, parsed_prompt_responses: dict) -> str | dict:
-    prompt_responses: dict = { response['config_item'] : response['value'] for response in parsed_prompt_responses }
-   
-    match format_function[0]:
-        case 'apply_string_template':
-            format_function_template: str = format_function[1]
-            format_function_keys: list = [ format_function_key for format_function_key in format_function[2] ]
-            
-            formatted_string: str = format_function_template.format(**prompt_responses)
-            return formatted_string
-        case 'build_json':
-            json_keys: list[str] = format_function[1]
-            config_items: list[str] = format_function[2]
-            response_values: list[str] = [ prompt_responses[config_item] for config_item in config_items ]
-
-            formatted_json: dict = {
-                json_key: response_values[index]
-                for index, json_key in enumerate(json_keys) }
-            return formatted_json
-    return ''
-
-def has_unspecified_default(prompt: dict) -> bool:
+def contains_unspecified_default(prompt: dict) -> bool:
     try:
         is_unique_value: bool = is_exactly_one(prompt['unique_value'])
         has_default_value: bool = bool(prompt['default_value'])
@@ -191,7 +141,7 @@ def has_unspecified_default(prompt: dict) -> bool:
 
 def contains_unspecified_defaults(prompts: list[dict]) -> bool:
     unspecified_defaults: list[bool] = [
-        has_unspecified_default(prompt)
+        contains_unspecified_default(prompt)
         for prompt in prompts ]
     return any(unspecified_defaults)
 
