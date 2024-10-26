@@ -2,16 +2,16 @@ import json, requests, sys, time, urllib3
 from halo import Halo # type: ignore
 from requests import Response
 
+from utils.dict_utils import get_dict_with_matching_key_value_pair
 from utils.firmware_utils import get_firmware_file_path
-from utils.format_utils import format_red
+from utils.format_utils import format_red, get_formatted_config_items
 from utils.parse_utils import is_vaild_firmware_version
 from utils.prompt_utils import confirm, get_credentials
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-def get_firmware_version(config: dict, print_result: bool = False) -> str | bool:
+def get_firmware_version(config: dict, quiet: bool = False) -> str | bool:
     spinner: Halo = Halo(text = 'Checking current IMD firmware version...\n', spinner = 'dots')
-    
     api_url: str = config['api_base_url']
     api_firmware_url: str= f'{api_url}sys/version'
     headers: dict = config['headers']
@@ -21,7 +21,7 @@ def get_firmware_version(config: dict, print_result: bool = False) -> str | bool
         response_code: int = firmware_response['retCode']
         firmware_version: str = firmware_response['data']
         if response_code == 0 and is_vaild_firmware_version(config = config, firmware_version = firmware_version):
-            if print_result:
+            if not quiet:
                 time.sleep(1)
                 spinner.succeed(f'\nCurrent IMD Firmware Version: {firmware_version}')
             else:
@@ -33,7 +33,7 @@ def get_firmware_version(config: dict, print_result: bool = False) -> str | bool
     except Exception as error:
         spinner.fail(f'Unable to get IMD firmware version: {error}\nPlease ensure you are able to ping the IMD.')
         if confirm(config, confirm_prompt = 'Do you want to try again?: '):
-            return get_firmware_version(config = config, print_result = print_result)
+            return get_firmware_version(config = config, quiet = quiet)
     return False
 
 def make_api_call(
@@ -158,7 +158,7 @@ def reset_imd_to_factory_defaults(config: dict, quiet: bool = True) -> dict | No
     return None
 
 def upgrade_imd_firmware(config: dict, quiet: bool = True) -> dict | bool:
-    current_firmware_version = get_firmware_version(config, print_result = False)
+    current_firmware_version = get_firmware_version(config, quiet = True)
     target_firmware_version = config['firmware_target']
     if current_firmware_version == target_firmware_version:
         print(f'IMD firmware already up to date (v.{current_firmware_version}).')
@@ -196,3 +196,15 @@ def upgrade_imd_firmware(config: dict, quiet: bool = True) -> dict | bool:
             print(format_red('Unable to find or download firmware. Please check your configuration.'))
         
     return False
+
+def get_ordered_api_calls(config: dict, prompts: dict, config_items: list[dict]) -> list[dict]:
+    api_call_sequence: list[str] = prompts['api_call_sequence']
+    formatted_config_items: list[dict] = get_formatted_config_items(config, prompts, config_items)
+    defaults: list[dict] = prompts['defaults']
+    api_calls: list[dict] = formatted_config_items + defaults
+    ordered_api_calls: list[dict] = [
+        get_dict_with_matching_key_value_pair(api_calls, 'config_item', api_call)
+        for api_call in api_call_sequence
+    ]
+
+    return ordered_api_calls

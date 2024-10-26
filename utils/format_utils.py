@@ -84,16 +84,3 @@ def get_formatted_config_items(config: dict, prompts: dict, config_items: list[d
         for formatter in formatters ]
 
     return formatted_config_items
-
-def get_ordered_api_calls(config: dict, prompts: dict, config_items: list[dict]) -> list[dict]:
-    api_call_sequence: list[str] = prompts['api_call_sequence']
-    formatted_config_items: list[dict] = get_formatted_config_items(config, prompts, config_items)
-    defaults: list[dict] = prompts['defaults']
-    api_calls: list[dict] = formatted_config_items + defaults
-    ordered_api_calls: list[dict] = [
-        api_call for api_call in api_calls 
-        for config_item_name in api_call_sequence 
-        if api_call['config_item'] == config_item_name
-    ]
-
-    return ordered_api_calls
