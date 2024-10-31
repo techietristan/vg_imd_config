@@ -1,10 +1,11 @@
 import json, requests, sys, time, urllib3
 from halo import Halo # type: ignore
 from requests import Response
+from typing import Callable
 
-from utils.dict_utils import get_dict_with_matching_key_value_pair
+from utils.dict_utils import get_dict_with_matching_key_value_pair, get_value_if_key_exists
 from utils.firmware_utils import get_firmware_file_path
-from utils.format_utils import format_red, get_formatted_config_items
+from utils.format_utils import format_green, format_blue, format_red, get_formatted_config_items
 from utils.parse_utils import is_vaild_firmware_version
 from utils.prompt_utils import confirm, get_credentials
 
@@ -197,9 +198,9 @@ def upgrade_imd_firmware(config: dict, quiet: bool = True) -> dict | bool:
         
     return False
 
-def get_ordered_api_calls(config: dict, prompts: dict, config_items: list[dict]) -> list[dict]:
+def get_ordered_api_calls(config: dict, prompts: dict, unique_config_items: list[dict]) -> list[dict]:
     api_call_sequence: list[str] = prompts['api_call_sequence']
-    formatted_config_items: list[dict] = get_formatted_config_items(config, prompts, config_items)
+    formatted_config_items: list[dict] = get_formatted_config_items(config, prompts, unique_config_items)
     defaults: list[dict] = prompts['defaults']
     api_calls: list[dict] = formatted_config_items + defaults
     ordered_api_calls: list[dict] = [
@@ -208,3 +209,46 @@ def get_ordered_api_calls(config: dict, prompts: dict, config_items: list[dict])
     ]
 
     return ordered_api_calls
+
+def apply_api_calls(config: dict, api_call: dict, quiet=False) -> bool:
+    config_item_name: str = get_value_if_key_exists(api_call, config_item_name)
+    api_calls: list[dict] = get_value_if_key_exists(api_call, 'api_calls')
+    headers = config['headers']
+    for api_call in api_calls:
+        method: str = get_value_if_key_exists(api_call, 'method')
+        command: str = get_value_if_key_exists(api_call, 'cmd')
+        data: dict = get_value_if_key_exists(api_call, 'data')
+        api_path: str = get_value_if_key_exists(api_call, 'api_path')
+        url = f'config[]'
+        status_message: str = f'Setting {config_item_name}\n' if command == 'set' else f'Removing {config_item_name}\n' if command == 'del' else ''
+        success_message: str = f'{config_item_name} set successfully!\n' if command == 'set' else f'{config_item_name} removed successfully!\n' if command == 'del' else ''
+        failure_message: str = f'Failed to set {config_item_name}!\n' if command == 'set' else f'Failed to remove {config_item_name}!\n' if command == 'del' else ''
+
+        def retry(api_call: dict) -> bool:
+            if confirm(config, 'Do you want to try again? (y or n): '):
+                return apply_api_calls(config, api_call, quiet)
+            return False
+
+        spinner = Halo(text = format_blue(f'{status_message}\n'), spinner = 'dots')
+        try:
+            if not quiet: spinner.start()
+            if not bool(data) and command == 'del': request = requests.post(url, headers = headers,  verify = False)
+            if bool(data) and method == 'post': request = requests.post(url, headers = headers, json = data, verify = False)
+            if bool(request):
+                response: dict = json.loads(request.text)
+                if response['retCode'] == 0:
+                    if not quiet and bool(success_message): spinner.succeed(format_green(success_message))
+                    return True
+                else: 
+                    if not quiet and bool(failure_message): spinner.fail(format_red(f'{failure_message} | IMD Error: {response['retMsg']}.'))
+                    retry(api_call)
+                    return False
+
+        except requests.exceptions.ConnectionError as error:
+            spinner.fail(format_red(f'Error while interacting with IMD: {error}.'))
+            retry(api_call)
+        except Exception as error:
+            if not quiet and bool(failure_message): spinner.fail(format_red(f'Function \'{config_item_name}\' error: \'{error}\''))
+            retry(api_call)
+            
+    return False

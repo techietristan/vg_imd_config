@@ -1,5 +1,7 @@
 import functools, re, sys
 
+from utils.dict_utils import get_value_if_key_exists
+from utils.parse_utils import is_exactly_one
 from typing import Pattern
 
 format_escape_strings: dict = {
@@ -35,18 +37,19 @@ def clear_line() -> None:
 
 
 def apply_formatting_function(config: dict, format_function: list, current_formatting: str = '', config_items: list[dict] = [{}]) -> str:
-    match format_function[0]:
-        case 'zfill':
-            return current_formatting.zfill(format_function[1])
-        case 'lower':
-            return current_formatting.lower()
-        case 'upper':
-            return current_formatting.upper()
-        case 'apply_string_template':
-            if bool(config_items[0]):
-                config_values: dict = { item['config_item'] : item['value'] for item in config_items }
-                format_function_template: str = format_function[1]
-                return format_function_template.format(**config_values)
+    if bool(format_function):
+        match format_function[0]:
+            case 'zfill':
+                return current_formatting.zfill(format_function[1])
+            case 'lower':
+                return current_formatting.lower()
+            case 'upper':
+                return current_formatting.upper()
+            case 'apply_string_template':
+                if bool(config_items):
+                    config_values: dict = { item['config_item'] : get_value_if_key_exists(item, 'value') for item in config_items }
+                    format_function_template: str = format_function[1]
+                    return format_function_template.format(**config_values)
     return current_formatting
 
 def apply_formatting_functions(config: dict, format_functions: list[list], next_formatting: str = '', config_items: list[dict] = [{}], iteration = 0) -> str:
@@ -61,19 +64,28 @@ def apply_formatting_functions(config: dict, format_functions: list[list], next_
         return next_formatting
 
 def format_user_input(config: dict, input_params: dict, user_input: str) -> str:
-    format_functions: list[list] = input_params['format_functions']
+    format_functions: list[list] | bool = get_value_if_key_exists(input_params, 'format_functions')
     stripped_user_input = user_input.strip()
-    if bool(format_functions[0]):
-        return apply_formatting_functions(config, format_functions, stripped_user_input)
+    if bool(format_functions):
+        return apply_formatting_functions(config, format_functions, stripped_user_input) #type: ignore[arg-type]
     else:
         return stripped_user_input
 
+def get_value_to_display(config: dict, formatter:dict, config_items: list[dict]) -> str | None:
+    raw_value_to_display: str | bool = get_value_if_key_exists(formatter, 'value_to_display')
+    if bool(raw_value_to_display):
+        value_to_display: str = apply_formatting_function(config, ['apply_string_template', raw_value_to_display], '', config_items )  
+        return value_to_display if bool(value_to_display) else None
+    return None 
+                
 def get_formatted_config_items(config: dict, prompts: dict, config_items: list[dict]) -> list[dict]:
     formatters: list[dict] = prompts['formatters']
     formatted_config_items: list[dict] = [
         {  
             'config_item': formatter['config_item'],
             'config_item_name': formatter['config_item_name'],
+            'display_to_user': is_exactly_one(get_value_if_key_exists(formatter, 'display_to_user')),
+            'value_to_display': get_value_to_display(config, formatter, config_items),
             'api_calls': [ {
                 'cmd': api_call['cmd'],
                 'method': api_call['method'],

@@ -1,9 +1,10 @@
 import json, os, shutil, sys
 
 from argparse import Namespace
+from datetime import datetime
 
 from utils.dict_utils import get_value_if_key_exists
-from utils.encryption_utils import encrypt
+from utils.encryption_utils import encrypt, decrypt
 from utils.format_utils import format_red, format_blue, format_bold
 from utils.parse_utils import parse_firmware_url, verify_input, is_exactly_zero, is_exactly_one, contains_unspecified_defaults
 from utils.prompt_utils import confirm, enumerate_options, get_input
@@ -59,22 +60,31 @@ def get_prompts_with_defaults(config: dict, prompts_filename: str, prompts_file_
 
     return prompts_with_defaults
 
-def update_prompts_file_with_defaults(config: dict) -> None:
+def get_prompts_file_contents(config: dict) -> tuple:
     config_files_path: str = get_value_if_key_exists(config, 'config_files_path')
     prompts_filename: str = get_value_if_key_exists(config, 'interactive_prompts_filename')
-    if bool(prompts_filename):   
+    if bool(config_files_path) and bool(prompts_filename):   
         prompts_file_path: str = os.path.join(config_files_path, prompts_filename)
         with open(prompts_file_path, 'r') as prompts_file:
-            prompts_file_contents = json.load(prompts_file)
-            all_defaults_specified: bool = not(contains_unspecified_defaults(prompts_file_contents['prompts']))
-            if all_defaults_specified:
-                return
-            if confirm(config, f'Do you want to set defaults for \'{format_blue(prompts_filename)}\'? '):    
-                prompts_with_defaults: list[dict] = get_prompts_with_defaults(config, prompts_filename, prompts_file_path)
-                updated_prompt_file_contents: dict = { **prompts_file_contents, "prompts": prompts_with_defaults}      
-                with open(prompts_file_path, 'w') as prompts_file:
-                    json.dump(updated_prompt_file_contents, prompts_file, indent = 4)
-                print(f'Defaults written to \'{format_blue(prompts_filename)}\'!\n')
+            prompts_file_contents: dict = json.load(prompts_file)
+    else:
+        return (False, False, False)
+
+    return prompts_filename, prompts_file_path, prompts_file_contents
+    
+def update_prompts_file_with_defaults(config: dict) -> None:
+    prompts_filename, prompts_file_path, prompts_file_contents = get_prompts_file_contents(config)
+    if not prompts_filename or not prompts_file_contents:
+        return
+    all_defaults_specified: bool = not(contains_unspecified_defaults(prompts_file_contents['prompts']))
+    if all_defaults_specified:
+        return
+    if confirm(config, f'Do you want to set defaults for \'{format_blue(prompts_filename)}\'? '):    
+        prompts_with_defaults: list[dict] = get_prompts_with_defaults(config, prompts_filename, prompts_file_path)
+        updated_prompt_file_contents: dict = { **prompts_file_contents, "prompts": prompts_with_defaults}      
+        with open(prompts_file_path, 'w') as prompts_file:
+            json.dump(updated_prompt_file_contents, prompts_file, indent = 4)
+        print(f'Defaults written to \'{format_blue(prompts_filename)}\'!\n')
 
 def get_config_filenames(file_type: str, config_files_path: str) -> list[str]:
     config_filenames: list[str] = [ filename for filename in os.listdir(config_files_path)
@@ -119,9 +129,9 @@ def get_config(main_file: str, args: Namespace, quiet: bool = True) -> dict:
     is_first_run: bool = not bool(config_filenames) and not bool(prompts_filenames)
     if is_first_run and not quiet:
         print(format_bold('\nWelcome to the Vertiv Geist IMD Configuration Script!\n'))
-    config_filename: str = args.config_file if bool(args.config_file) else get_filename('config', config_files_path = config_files_path, quiet = quiet)
-    prompts_filename: str = args.prompts_file if bool (args.prompts_file) else get_filename('prompts', config_files_path = config_files_path, quiet = quiet)
-    if bool(config_filename):
+    config_filename: str | bool | None= args.config_file if bool(args.config_file) else get_filename('config', config_files_path = config_files_path, quiet = quiet)
+    prompts_filename: str | bool | None= args.prompts_file if bool (args.prompts_file) else get_filename('prompts', config_files_path = config_files_path, quiet = quiet)
+    if type(config_filename) == str:
         json_file_path: str = os.path.join(config_files_path, config_filename)
     else:
         print(format_red('Unable to load config file! Exiting script.'))
@@ -145,3 +155,49 @@ def get_config(main_file: str, args: Namespace, quiet: bool = True) -> dict:
 
         return finished_config
     
+def write_current_imd_config_to_file(config: dict, imd_config: list[dict], quiet: bool = True) -> None:
+    prompts_filename, prompts_file_path, prompts_file_contents = get_prompts_file_contents(config)
+    write_temp_imd_config_file: str | bool = get_value_if_key_exists(prompts_file_contents, 'write_temp_imd_config_file')
+    encrypt_temp_imd_config_file: str | bool = get_value_if_key_exists(prompts_file_contents, 'encrypt_temp_imd_config_file')
+    temp_imd_config_filename: str | bool = get_value_if_key_exists(prompts_file_contents, 'temp_imd_config_filename')
+    config_files_path: str = get_value_if_key_exists(config, 'config_files_path')
+    passphrase: str | bool = get_value_if_key_exists(config, 'passphrase')
+    config_json: str = json.dumps(imd_config)
+    if not bool(write_current_imd_config_to_file) or not bool(temp_imd_config_filename) or not bool(config_files_path):
+        return
+    imd_config_file_path: str = os.path.join(config_files_path, temp_imd_config_filename) #type: ignore[arg-type]
+    encrypt_contents: bool = bool(encrypt_temp_imd_config_file) and bool(passphrase)
+    if encrypt_contents:
+        salt, encrypted_config_file_contents = encrypt(config, passphrase, config_json) # type: ignore[arg-type]
+        imd_config_file_contents: str = f'salt: {salt}\n{encrypted_config_file_contents}'
+    else:
+        imd_config_file_contents = config_json
+
+    with open(imd_config_file_path, 'w') as imd_config_file:
+        if not quiet:
+            print(f'Saving current IMD config to {imd_config_file_path}')
+        imd_config_file.write(imd_config_file_contents)
+
+def get_previous_imd_config(config: dict) -> dict | bool:
+    prompts_filename, prompts_file_path, prompts_file_contents = get_prompts_file_contents(config)
+    temp_imd_config_filename: str | bool = get_value_if_key_exists(prompts_file_contents, 'temp_imd_config_filename')
+    config_files_path: str = get_value_if_key_exists(config, 'config_files_path')
+    imd_config_file_path: str = os.path.join(config_files_path, temp_imd_config_filename) #type: ignore[arg-type]
+    passphrase: str | bool = get_value_if_key_exists(config, 'passphrase')
+    if os.path.isfile(imd_config_file_path):
+        print(f'Existing config file found: \'{format_blue(imd_config_file_path)}\'')
+        if confirm(config, 'Load this configuration? (y or n): ') and bool(passphrase):
+            with open(imd_config_file_path) as imd_config_file:
+                imd_config_file_contents: list = imd_config_file.read().splitlines()
+                if 'salt: ' in imd_config_file_contents[0]:
+                    salt: str = imd_config_file_contents[0].split(' ')[1]
+                    previous_imd_config: str = decrypt(config, salt, imd_config_file_contents[1], passphrase) #type: ignore[assignment, arg-type]
+                    previous_imd_config_parsed: dict = json.loads(previous_imd_config)
+                    return previous_imd_config_parsed
+                else:
+                    return json.loads(imd_config_file_contents[0])
+        elif confirm(config, 'Delete this configuration? (y or n): '):
+            os.remove(imd_config_file_path)
+            return False
+
+    return False

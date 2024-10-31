@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from utils.format_utils import apply_formatting_function, apply_formatting_functions, format_user_input, get_formatted_config_items
+from utils.format_utils import apply_formatting_function, apply_formatting_functions, format_user_input, get_value_to_display, get_formatted_config_items
 
 class TestApplyFormattingFunction(TestCase):
     def test_apply_user_input_formatting_function_zfill(self):
@@ -131,6 +131,8 @@ class TestGetFormattedConfigItems(TestCase):
                 "config_item": "ntp",
                 "config_item_name": "NTP Servers",
                 "format_functions": [[ "apply_string_template", "{{'ntpServer1': '{primary_ntp}', 'ntpServer2': '{secondary_ntp}'}}"]],
+                "display_to_user": 1,
+                "value_to_display": "{primary_ntp}, {secondary_ntp}",
                 "api_calls": [
                     {
                         "cmd":      "set",
@@ -144,6 +146,8 @@ class TestGetFormattedConfigItems(TestCase):
         expected_config_items: list[dict] = [{
                 "config_item": "ntp",
                 "config_item_name": "NTP Servers",
+                "display_to_user": 1,
+                "value_to_display": "test.primary_ntp.net, test.secondary_ntp.net",
                 "api_calls": [
                     {
                         "cmd":      "set",
@@ -156,3 +160,29 @@ class TestGetFormattedConfigItems(TestCase):
         returned_config_items = get_formatted_config_items({}, test_prompts, test_config_items)
         self.assertDictEqual(expected_config_items[0], returned_config_items[0])
     
+class TestGetValueToDisplay(TestCase):
+    def test_get_value_to_display(self):
+        test_config: dict = {}
+        test_formatter: dict ={
+            "value_to_display": "{primary_ntp}, {secondary_ntp}",
+        }
+        test_config_items: list[dict] = [
+            {
+                "config_item": 'primary_ntp',
+                "config_item_name": "Primary NTP",
+                "value": 'test.primary_ntp.net',
+                "test": 1
+            },
+            {
+                "config_item": 'secondary_ntp',
+                "config_item_name": "Secondary NTP",
+                "value": 'test.secondary_ntp.net',
+                "test": 1
+            },        
+        ] 
+        expected_value_to_return: str = "test.primary_ntp.net, test.secondary_ntp.net"
+        returned_value: str | None = get_value_to_display(test_config, test_formatter, test_config_items)
+        returned_value_missing_config_items: str | None = get_value_to_display(test_config, test_formatter, {})
+        self.assertEqual(expected_value_to_return, returned_value)
+        self.assertEqual(None, returned_value_missing_config_items)
+

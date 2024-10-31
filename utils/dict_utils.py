@@ -7,7 +7,6 @@ def get_dict_with_matching_key_value_pair(dicts: list[dict], key: str, value: An
                 return current_dict
     return {}
 
-
 def get_value_if_key_exists(input_dict: dict, key: str):
     if key in input_dict.keys():
         return input_dict[key]

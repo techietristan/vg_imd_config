@@ -4,6 +4,9 @@
         "text": "\nWelcome to the Vertiv Geist IMD Configuration Script!\n",
         "display": 1
     },
+    "write_temp_imd_config_file": 1,
+    "encrypt_temp_imd_config_file": 1,
+    "temp_imd_config_filename": "last_imd_config.txt",
     "prompts": [
         {
             "config_item": "row",
@@ -33,7 +36,8 @@
             "prompt_text": "PDU letter",
             "example_text": "b",
             "verify_functions": [["is_one_of", ["a", "b"]]],
-            "format_functions": [[]],
+            "guess_function": "get_next_in_series",
+            "remember_value": 1,
             "input_mode": "input",
             "unique_value": 1,
             "default_value": "a",
@@ -45,7 +49,8 @@
             "prompt_text": "IMD hostname",
             "example_text": "ab-0123456-ps-b1",
             "verify_functions": [["is_hostname"]],
-            "format_functions": [[]],
+            "guess_function": "get_next_hostname",
+            "remember_value": 1,
             "input_mode": "input",
             "unique_value": 1,
             "empty_allowed": 0
@@ -56,7 +61,6 @@
             "prompt_text": "primary NTP FQDN",
             "example_text": "time.primary.net",
             "verify_functions": [["is_domain_name"]],
-            "format_functions": [[]],
             "input_mode": "input",
             "unique_value": 0,
             "encrypt_default": 1,
@@ -69,7 +73,6 @@
             "prompt_text": "the secondary NTP FQDN",
             "example_text": "time.secondary.net",
             "verify_functions": [["is_domain_name"]],
-            "format_functions": [[]],
             "input_mode": "input",
             "unique_value": 0,
             "encrypt_default": 1,
@@ -111,6 +114,8 @@
             "config_item": "credentials",
             "config_item_name": "Username and Password",
             "format_functions": [[ "apply_string_template", "{{'username': '{username}', 'password': '{password}', 'enabled': 'true', 'contorol': 'true', 'admin': 'true'}}"]],
+            "display_to_user": 1,
+            "value_to_display": "{username}, *******",
             "api_calls": [
                 {
                     "cmd":      "add",
@@ -123,6 +128,8 @@
             "config_item": "label",
             "config_item_name": "Hostname Label",
             "format_functions": [[ "apply_string_template", "{{'label': '{imd_hostname}', 'hostname': '{imd_hostname}' }}"]],
+            "display_to_user": 1,
+            "value_to_display": "{imd_hostname}",
             "api_calls": [
                 {
                     "cmd":      "set",
@@ -135,6 +142,8 @@
             "config_item": "ntp",
             "config_item_name": "NTP Servers",
             "format_functions": [[ "apply_string_template", "{{'ntpServer1': '{primary_ntp}', 'ntpServer2': '{secondary_ntp}'}}"]],
+            "display_to_user": 1,
+            "value_to_display": "{primary_ntp}, {secondary_ntp}",
             "api_calls": [
                 {
                     "cmd":      "set",
@@ -146,7 +155,9 @@
         {
             "config_item": "location",
             "config_item_name": "Rack Location",
-            "format_functions": [[ "apply_string_template", "R{row}-{rack}/{pdu_letter}"]],
+            "format_functions": [[ "apply_string_template", "R{row}-{rack}/{pdu_letter}"], ["upper"]],
+            "display_to_user": 1,
+            "value_to_display": "R{row}-{rack}/{pdu_letter}",
             "api_calls": [
                 {
                     "cmd":      "set",

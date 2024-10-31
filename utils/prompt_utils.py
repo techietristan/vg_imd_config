@@ -147,3 +147,16 @@ def get_unique_config_items(config: dict, prompts: dict, quiet = False) -> list[
     unique_config_items: list[dict] = [ config_item(config = config) for config_item in imd_config_functions ]
 
     return unique_config_items
+
+def confirm_imd_config(config: dict, ordered_api_calls: list[dict]) -> bool:
+    confirm_items: list[dict] = [
+        {'config_item_name': api_call['config_item_name'], 'value_to_display': api_call['value_to_display']}
+        for api_call in ordered_api_calls
+        if bool(get_value_if_key_exists(api_call, 'value_to_display')) and bool (get_value_if_key_exists(api_call, 'display_to_user'))
+    ]
+    print('Configure the currently connected IMD with the following parameters?')
+    for confirm_item in confirm_items:
+        print(f'\t{confirm_item['config_item_name']}: {format_blue(confirm_item['value_to_display'])}')
+    imd_config_confirmed: bool = confirm(config, 'Please enter \'y\' or \'n\': ')
+
+    return imd_config_confirmed

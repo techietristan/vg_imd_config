@@ -3,7 +3,6 @@ import re, validators
 from re import Match, Pattern
 from typing import Any
 
-from utils.format_utils import format_red
 from utils.dict_utils import get_value_if_key_exists
 
 def is_exactly(value: Any, expected_value: Any) -> bool:

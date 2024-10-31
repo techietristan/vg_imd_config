@@ -18,6 +18,8 @@ class TestGetOrderedApiCalls(TestCase):
                 "config_item": "label",
                 "config_item_name": "Hostname Label",
                 "format_functions": [[ "apply_string_template", "{{'label': '{imd_hostname}', 'hostname': '{imd_hostname}' }}"]],
+                "display_to_user": 1,
+                "value_to_display": "{imd_hostname}",
                 "api_calls": [
                     {
                         "cmd":      "set",
@@ -81,9 +83,9 @@ class TestGetOrderedApiCalls(TestCase):
     ]
 
     expected_ordered_api_calls: list[dict] = [
-        {'config_item': 'label', 'config_item_name': 'Hostname Label', 'api_calls': [{'cmd': 'set', 'method': 'post', 'api_path': 'system', 'data': "{'label': 'test_hostname', 'hostname': 'test_hostname' }"}]},
-        {'config_item': 'ipv6', 'config_item_name': 'IPv6', 'api_calls': [{'method': 'post', 'api_path': 'system', 'cmd': 'set', 'data': {'ip6Enabled': 'false'}}]},
-        {'config_item': 'ntp', 'config_item_name': 'NTP Servers', 'api_calls': [{'cmd': 'set', 'method': 'post', 'api_path': 'conf/contact', 'data': "{'ntpServer1': 'test.primary_ntp.net', 'ntpServer2': 'test.secondary_ntp.net'}"}]}
+        {'config_item': 'label', 'config_item_name': 'Hostname Label', 'display_to_user': True, 'value_to_display': 'test_hostname', 'api_calls': [{'cmd': 'set', 'method': 'post', 'api_path': 'system', 'data': "{'label': 'test_hostname', 'hostname': 'test_hostname' }"}]}, 
+        {'config_item': 'ipv6', 'config_item_name': 'IPv6', 'api_calls': [{'method': 'post', 'api_path': 'system', 'cmd': 'set', 'data': {'ip6Enabled': 'false'}}]}, 
+        {'config_item': 'ntp', 'config_item_name': 'NTP Servers', 'display_to_user': False, 'value_to_display': None, 'api_calls': [{'cmd': 'set', 'method': 'post', 'api_path': 'conf/contact', 'data': "{'ntpServer1': 'test.primary_ntp.net', 'ntpServer2': 'test.secondary_ntp.net'}"}]}
     ]
 
     def test_get_ordered_api_calls(self):
