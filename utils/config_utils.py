@@ -3,7 +3,7 @@ import json, os, shutil, sys
 from argparse import Namespace
 from datetime import datetime
 
-from utils.dict_utils import get_value_if_key_exists
+from utils.dict_utils import get_value_if_key_exists, get_values_if_keys_exist
 from utils.encryption_utils import encrypt, decrypt
 from utils.format_utils import format_red, format_blue, format_bold
 from utils.parse_utils import parse_firmware_url, verify_input, is_exactly_zero, is_exactly_one, contains_unspecified_defaults
@@ -91,6 +91,7 @@ def get_config_filenames(file_type: str, config_files_path: str) -> list[str]:
         if file_type in filename
         and '.json' in filename 
         and 'default' not in filename ]
+
     return config_filenames
 
 def get_filename(file_type:str, config_files_path: str, quiet = False) -> str | bool | None:
@@ -157,11 +158,8 @@ def get_config(main_file: str, args: Namespace, quiet: bool = True) -> dict:
     
 def write_current_imd_config_to_file(config: dict, imd_config: list[dict], quiet: bool = True) -> None:
     prompts_filename, prompts_file_path, prompts_file_contents = get_prompts_file_contents(config)
-    write_temp_imd_config_file: str | bool = get_value_if_key_exists(prompts_file_contents, 'write_temp_imd_config_file')
-    encrypt_temp_imd_config_file: str | bool = get_value_if_key_exists(prompts_file_contents, 'encrypt_temp_imd_config_file')
-    temp_imd_config_filename: str | bool = get_value_if_key_exists(prompts_file_contents, 'temp_imd_config_filename')
-    config_files_path: str = get_value_if_key_exists(config, 'config_files_path')
-    passphrase: str | bool = get_value_if_key_exists(config, 'passphrase')
+    write_temp_imd_config_file, encrypt_temp_imd_config_file, temp_imd_config_filename = get_values_if_keys_exist(prompts_file_contents, ['write_temp_imd_config_file', 'encrypt_temp_imd_config_file', 'temp_imd_config_filename'])
+    config_files_path, passphrase = get_values_if_keys_exist(config, ['config_files_path', 'passphrase'])
     config_json: str = json.dumps(imd_config)
     if not bool(write_current_imd_config_to_file) or not bool(temp_imd_config_filename) or not bool(config_files_path):
         return

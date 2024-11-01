@@ -12,3 +12,9 @@ def get_value_if_key_exists(input_dict: dict, key: str):
         return input_dict[key]
     else:
         return False
+
+def get_values_if_keys_exist(input_dict: dict, keys: list[str]) -> tuple:
+    values: tuple = tuple(
+        get_value_if_key_exists(input_dict, key) for key in keys
+    )
+    return values

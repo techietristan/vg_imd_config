@@ -1,6 +1,6 @@
 import os, sys
 
-from utils.api_utils import get_firmware_version, get_ordered_api_calls, reset_imd_to_factory_defaults, set_imd_creds, upgrade_imd_firmware
+from utils.api_utils import get_firmware_version, get_ordered_api_calls, reset_imd_to_factory_defaults, set_imd_creds, upgrade_imd_firmware, apply_api_call, apply_all_api_calls
 from utils.argument_utils import parse_args
 from utils.config_utils import get_config, update_prompts_file_with_defaults, write_current_imd_config_to_file, get_previous_imd_config
 from utils.encryption_utils import decrypt_prompts
@@ -8,7 +8,7 @@ from utils.format_utils import format_yellow
 from utils.prompt_utils import get_unique_config_items, confirm_imd_config
 from utils.sys_utils import exit_with_code
 
-def main():
+def main() -> int:
     try:
         args = parse_args(sys.argv)
         
@@ -36,13 +36,16 @@ def main():
                 unique_config_items: list[dict] = get_unique_config_items(config, prompts)
                 ordered_api_calls: list[dict] = get_ordered_api_calls(config, prompts, unique_config_items)
                 write_current_imd_config_to_file(config, ordered_api_calls, quiet = False)
-            if bool(confirm_imd_config(config, ordered_api_calls)):
-                print(format_yellow('Proceed to configure IMD'))
 
+            if bool(confirm_imd_config(config, ordered_api_calls)):
+                if apply_all_api_calls(config, ordered_api_calls):
+                    print('IMD configuration successful!')
 
     except KeyboardInterrupt:
         print(format_yellow('\nKeyboard Interrupt Received. Exiting Script'))
         exit_with_code(130)
+
+    return 0
 
 if __name__ == "__main__":
     main()

@@ -217,7 +217,7 @@
         },
         {
             "config_item": "snmp",
-            "config_item_name": "snmp",
+            "config_item_name": "SNMP",
             "api_calls": [
                 {
                     "method":   "post",
