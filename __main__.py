@@ -38,6 +38,7 @@ def main() -> int:
                 write_current_imd_config_to_file(config, ordered_api_calls, quiet = False)
 
             if bool(confirm_imd_config(config, ordered_api_calls)):
+                upgrade_imd_firmware(config = config, quiet = False)
                 if apply_all_api_calls(config, ordered_api_calls):
                     print('IMD configuration successful!')
 

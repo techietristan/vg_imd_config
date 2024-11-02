@@ -10,6 +10,8 @@ from utils.parse_utils import parse_firmware_url, verify_input, is_exactly_zero,
 from utils.prompt_utils import confirm, enumerate_options, get_input
 from utils.sys_utils import exit_with_code
 
+spinners: list[str] = ['dots', 'dots2', 'dots3', 'dots4', 'dots5', 'dots6', 'dots7', 'dots8', 'dots9', 'dots10', 'dots11', 'dots12', 'line', 'line2', 'pipe', 'simpleDots', 'simpleDotsScrolling', 'star', 'star2', 'flip', 'hamburger', 'growVertical', 'growHorizontal', 'balloon', 'balloon2', 'noise', 'bounce', 'boxBounce', 'boxBounce2', 'triangle', 'arc', 'circle', 'squareCorners', 'circleQuarters', 'circleHalves', 'squish', 'toggle', 'toggle2', 'toggle3', 'toggle4', 'toggle5', 'toggle6', 'toggle7', 'toggle8', 'toggle9', 'toggle10', 'toggle11', 'toggle12', 'toggle13', 'arrow', 'arrow2', 'arrow3', 'bouncingBar', 'bouncingBall', 'smiley', 'monkey', 'hearts', 'clock', 'earth', 'moon', 'runner', 'pong', 'shark', 'dqpb']
+
 def get_encyrption_passphrase(config: dict, prompts_filename: str) -> str:
     print(f'Encrypted defaults found in {format_blue(prompts_filename)}. Please set a passphrase for encrypting and decrypting these values.')
     passphrase: str = get_input(
@@ -143,6 +145,8 @@ def get_config(main_file: str, args: Namespace, quiet: bool = True) -> dict:
         
         imd_ip: str | None = args.imd_ip_address
         current_imd_ip: str | None = config['default_imd_ip'] if imd_ip == None else imd_ip
+        specified_spinner: str | None = args.spinner
+        spinner: str = specified_spinner if bool(specified_spinner) and specified_spinner in spinners else config['default_spinner']
         parsed_firmware_url: dict | bool = parse_firmware_url(config, config['firmware_file_url'])
 
         finished_config = {**config, 
@@ -152,6 +156,7 @@ def get_config(main_file: str, args: Namespace, quiet: bool = True) -> dict:
             "interactive_prompts_filename": prompts_filename,
             "config_files_path": config_files_path,
             "display_greeting": 0 if is_first_run else 1,
+            "spinner": spinner,
             "api_attempts": config['default_api_attempts'],
             "api_retry_time": config['default_api_retry_time']
             }

@@ -154,7 +154,7 @@ def confirm_imd_config(config: dict, ordered_api_calls: list[dict]) -> bool:
         for api_call in ordered_api_calls
         if bool(get_value_if_key_exists(api_call, 'value_to_display')) and bool (get_value_if_key_exists(api_call, 'display_to_user'))
     ]
-    print('Configure the currently connected IMD with the following parameters?')
+    print('\nConfigure the currently connected IMD with the following parameters?')
     for confirm_item in confirm_items:
         print(f'\t{confirm_item['config_item_name']}: {format_blue(confirm_item['value_to_display'])}')
     imd_config_confirmed: bool = confirm(config, 'Please enter \'y\' or \'n\': ')

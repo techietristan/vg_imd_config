@@ -13,7 +13,7 @@ from utils.prompt_utils import confirm, get_credentials
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 def get_firmware_version(config: dict, quiet: bool = False) -> str | bool:
-    spinner: Halo = Halo(text = 'Checking current IMD firmware version...\n', spinner = 'dots')
+    spinner: Halo = Halo(text = 'Checking current IMD firmware version...\n', spinner = config['spinner'])
     api_url: str = config['api_base_url']
     api_firmware_url: str= f'{api_url}sys/version'
     headers: dict = config['headers']
@@ -49,7 +49,7 @@ def make_api_call(
     function_name: str = '',
     quiet: bool = False) -> Response | bool:
 
-    spinner = Halo(text = f'{status_msg}\n', spinner = 'dots')
+    spinner = Halo(text = f'{status_msg}\n', spinner = config['spinner'])
     try:
         spinner.start()
         match action:
@@ -173,7 +173,7 @@ def upgrade_imd_firmware(config: dict, quiet: bool = True) -> dict | bool:
             firmware_upgrade_api_endpoint: str = f'https://{config['current_imd_ip']}/transfer/firmware?token={token}'
             firmware_upgrade_headers: dict = {'Content_Type' : 'multipart/form-data'}
             
-            @Halo(text = 'Upgrading IMD Firmware...', spinner = 'dots')
+            @Halo(text = 'Upgrading IMD Firmware...', spinner = config['spinner'])
             def upgrade_firmware(config):
                 try:
                     request = requests.post(
@@ -231,7 +231,7 @@ def apply_api_call(config: dict, config_item_name: str, api_call: dict, retry_at
     success_message: str = f'{config_item_name} set successfully!' if command == 'set' or 'add' else f'{config_item_name} removed successfully!' if command == 'del' else ''
     failure_message: str = f'Failed to set {config_item_name}!' if command == 'set' else f'Failed to remove {config_item_name}!' if command == 'del' else ''
     
-    spinner = Halo(spinner = 'simpleDotsScrolling')
+    spinner = Halo(spinner = config['spinner'])
     if not quiet: spinner.start(text = config_item_name)
     try:
         time.sleep(random() * .5)
