@@ -151,7 +151,9 @@ def get_config(main_file: str, args: Namespace, quiet: bool = True) -> dict:
             "parsed_firmware_url": parsed_firmware_url,
             "interactive_prompts_filename": prompts_filename,
             "config_files_path": config_files_path,
-            "display_greeting": 0 if is_first_run else 1
+            "display_greeting": 0 if is_first_run else 1,
+            "api_attempts": config['default_api_attempts'],
+            "api_retry_time": config['default_api_retry_time']
             }
 
         return finished_config

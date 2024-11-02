@@ -211,10 +211,18 @@ def get_ordered_api_calls(config: dict, prompts: dict, unique_config_items: list
 
     return ordered_api_calls
 
-def apply_api_call(config: dict, config_item_name: str, api_call: dict, quiet=False) -> bool:
-    def retry(retry_attempts: int = 10) -> bool:
+def apply_api_call(config: dict, config_item_name: str, api_call: dict, retry_attempts: int, quiet=False) -> bool:
+    def retry(retry_attempts: int, spinner: Halo, message: str) -> bool:
+        if not quiet: spinner.fail(format_red(message))
         auto_retry: bool = retry_attempts > 0
-        return apply_api_call(config, config_item_name, api_call, quiet) if auto_retry or confirm(config, 'Do you want to try again? (y or n): ') else False
+        retry_wait_time: int = config['api_retry_time'] 
+        if auto_retry:
+            time.sleep(retry_wait_time)
+            if not quiet: print("\033[A\033[A")
+            return apply_api_call(config, config_item_name, api_call, retry_attempts - 1, quiet) 
+        if confirm(config, 'Do you want to try again? (y or n): '):
+            return apply_api_call(config, config_item_name, api_call, config['api_attempts'], quiet)
+        return False
 
     method, command, data, api_path = get_values_if_keys_exist(api_call, ['method', 'cmd', 'data', 'api_path'])
     api_attempts, default_api_retry_time = get_values_if_keys_exist(config, ['default_api_attempts', 'default_api_retry_time'])
@@ -223,11 +231,13 @@ def apply_api_call(config: dict, config_item_name: str, api_call: dict, quiet=Fa
     success_message: str = f'{config_item_name} set successfully!' if command == 'set' or 'add' else f'{config_item_name} removed successfully!' if command == 'del' else ''
     failure_message: str = f'Failed to set {config_item_name}!' if command == 'set' else f'Failed to remove {config_item_name}!' if command == 'del' else ''
     
-    spinner = Halo(spinner = 'arc')
+    spinner = Halo(spinner = 'simpleDotsScrolling')
     if not quiet: spinner.start(text = config_item_name)
     try:
-        time.sleep(2)
-        spinner.succeed(text = success_message)
+        time.sleep(random() * .5)
+        if random() > 0.7:
+            raise requests.exceptions.ConnectionError('404: Host not found!')
+        if not quiet: spinner.succeed(text = success_message)
         return True
         # if not bool(data) and command == 'del': request = {'text': {"retCode": 0, "retMsg": "success"}} #requests.post(url, headers = headers,  verify = False)
         # if bool(data) and method == 'post': request = {'text': {"retCode": 0, "retMsg": "success"}} #requests.post(url, headers = headers, json = data, verify = False)
@@ -240,27 +250,23 @@ def apply_api_call(config: dict, config_item_name: str, api_call: dict, quiet=Fa
         #         return True
         #     else: 
         #         if not quiet and bool(failure_message): spinner.fail(text = f'{failure_message} | IMD Error: {api_response_message}.')
-        #         return retry()
+        #         return retry(retry_attempts, spinner)
         #         return False 
     except requests.exceptions.ConnectionError as error:
-        print(format_red(f'\nError!\n'))
-        spinner.fail(format_red(f'Error while interacting with IMD: {error}.'))
-        return retry()
+        return retry(retry_attempts, spinner, f'Error while interacting with IMD: \'{error}\'')
     except Exception as error:
-        print(format_red(f'\nError!\n'))
-        print(format_red(f'{error}'))
-        if not quiet and bool(failure_message): spinner.fail(format_red(f'Function \'{config_item_name}\' error: \'{error}\''))
-        return retry()
+        return retry(retry_attempts, spinner, f'Function \'{config_item_name}\' error: \'{error}\'')
 
     return False
 
 def apply_all_api_calls(config: dict, ordered_api_calls: list[dict]) ->  bool:
+    retry_attempts: int = config['api_attempts']
     api_call_results: list = []
     for ordered_api_call in ordered_api_calls:
         for api_call in ordered_api_call['api_calls']:
             config_item_name: str = ordered_api_call['config_item_name']
             api_call_results.append(
-                apply_api_call(config, config_item_name, api_call)
+                apply_api_call(config, config_item_name, api_call, retry_attempts)
             )
     all_api_calls_succeeded: bool = all(api_call_results)
 

@@ -11,9 +11,10 @@ from utils.sys_utils import exit_with_code
 def main() -> int:
     try:
         args = parse_args(sys.argv)
-        
+        config: dict = get_config(main_file = __file__, args = args, quiet = False)
+
         if args.get_firmware_version:
-            get_firmware_version(config = config, print_result = True)
+            get_firmware_version(config = config, quiet = False)
 
         elif args.reset_imd:
             reset_imd_to_factory_defaults(config = config, quiet = False)
@@ -25,16 +26,15 @@ def main() -> int:
             upgrade_imd_firmware(config = config, quiet = False)
         
         elif not any (bool(value) for value in vars(args).values()):
-            config: dict = get_config(main_file = __file__, args = args, quiet = False)
             update_prompts_file_with_defaults(config)
             prompts: dict = decrypt_prompts(config)
             previous_imd_config: dict | bool = get_previous_imd_config(config)
 
             if bool(previous_imd_config):
-                ordered_api_calls: list[dict] = previous_imd_config
+                ordered_api_calls: list[dict] = previous_imd_config #type: ignore[assignment]
             else:
                 unique_config_items: list[dict] = get_unique_config_items(config, prompts)
-                ordered_api_calls: list[dict] = get_ordered_api_calls(config, prompts, unique_config_items)
+                ordered_api_calls = get_ordered_api_calls(config, prompts, unique_config_items)
                 write_current_imd_config_to_file(config, ordered_api_calls, quiet = False)
 
             if bool(confirm_imd_config(config, ordered_api_calls)):
