@@ -41,7 +41,7 @@ class TestApplyFormattingFunction(TestCase):
     expected_formatted_string: str = "R04-04/A"
 
     def test_apply_format_function_apply_string_template(self):
-        format_function: list = self.test_string_formatter['format_functions'][0]
+        format_function: list[str] = self.test_string_formatter['format_functions'][0]
         formatted_string = apply_formatting_function({}, format_function, '', self.test_string_parsed_promts)
         self.assertEqual(formatted_string, self.expected_formatted_string)
 
@@ -74,7 +74,42 @@ class TestApplyFormattingFunction(TestCase):
     def test_apply_format_function_json(self):
         format_function: list = self.test_json_formatter['format_functions'][0]
         formatted_json = apply_formatting_function({}, format_function, '', self.test_json_parsed_promt_responses)
-     
+
+class TestApplyFormattingFunctions(TestCase):
+    def test_apply_format_functions_json(self):
+        test_string_formatter: dict = {
+                "config-item": "location",
+                "config-item-name": "Rack Location",
+                "api_path": "conf/contact",
+                "post_keys": ["description"],
+                "format_functions": [[ "apply_string_template", "R{row}-{rack}/{pdu_letter}"],["upper"]],
+                "test": 0
+        }
+
+        test_string_parsed_promts: list[dict] = [
+            {
+                "config_item": "row",
+                "value": "07",
+            },
+            {
+                "config_item": "rack",
+                "value": "09",
+            },
+            {
+                "config_item": "pdu_letter",
+                "value": "b",
+            }
+        ]
+
+        expected_formatted_string: str = "R07-09/B"
+
+        format_functions: list[list] = test_string_formatter['format_functions']
+        formatted_string = apply_formatting_functions({}, format_functions, '', test_string_parsed_promts)
+        print((formatted_string))
+        self.assertEqual(expected_formatted_string, formatted_string)
+
+
+
 class TestFormatUserInput(TestCase):
     def test_format_user_input_none(self):
         test_prompt = {'format_functions': [[]], 'empty_allowed': 0}

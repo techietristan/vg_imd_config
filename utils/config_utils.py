@@ -185,7 +185,7 @@ def get_previous_imd_config(config: dict) -> dict | bool:
     imd_config_file_path: str = os.path.join(config_files_path, temp_imd_config_filename) #type: ignore[arg-type]
     passphrase: str | bool = get_value_if_key_exists(config, 'passphrase')
     if os.path.isfile(imd_config_file_path):
-        print(f'Existing config file found: \'{format_blue(imd_config_file_path)}\'')
+        print(f'Previous IMD configuration found: \'{format_blue(imd_config_file_path)}\'')
         if confirm(config, 'Load this configuration? (y or n): ') and bool(passphrase):
             with open(imd_config_file_path) as imd_config_file:
                 imd_config_file_contents: list = imd_config_file.read().splitlines()

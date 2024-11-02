@@ -36,6 +36,7 @@
             "prompt_text": "PDU letter",
             "example_text": "b",
             "verify_functions": [["is_one_of", ["a", "b"]]],
+            "format_functions": [["upper"]],
             "guess_function": "get_next_in_series",
             "remember_value": 1,
             "input_mode": "input",
