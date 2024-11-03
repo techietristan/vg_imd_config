@@ -135,7 +135,7 @@
                 {
                     "cmd":      "set",
                     "method":   "post",
-                    "api_path": "system"
+                    "api_path": "conf/system"
                 }
             ]
         },
@@ -149,14 +149,14 @@
                 {
                     "cmd":      "set",
                     "method":   "post",
-                    "api_path": "conf/contact"
+                    "api_path": "conf/time"
                 }
             ]
         },
         {
             "config_item": "location",
             "config_item_name": "Rack Location",
-            "format_functions": [[ "apply_string_template", "R{row}-{rack}/{pdu_letter}"], ["upper"]],
+            "format_functions": [[ "apply_string_template", "{{'location': 'R{row}-{rack}/{pdu_letter}', 'description': 'R{row}-{rack}/{pdu_letter}'}}"]],
             "display_to_user": 1,
             "value_to_display": "R{row}-{rack}/{pdu_letter}",
             "api_calls": [
@@ -176,7 +176,7 @@
             "api_calls": [
                 {
                     "method":   "post",
-                    "api_path": "system",
+                    "api_path": "conf/system",
                     "cmd":      "set",
                     "data":     {"ip6Enabled": "false"}
                 }
@@ -188,7 +188,7 @@
             "api_calls": [
                 {
                     "method":   "post",
-                    "api_path": "network/ethernet/stp",
+                    "api_path": "conf/network/ethernet/stp",
                     "cmd":      "set",
                     "data":     {"enabled": "false", "bridgePriority": 24576, "mode": "rstp", "maxHops": 40, "helloTime": 2, "maxAge": 40, "forwardDelay": 21}
                 }
@@ -200,8 +200,8 @@
             "api_calls": [
                 {
                     "method":   "post",
-                    "api_path": "network/ethernet/dns/1",
-                    "cmd":      "del"
+                    "api_path": "conf/network/ethernet/dns/1",
+                    "cmd":      "delete"
                 }
             ]
         },
@@ -211,8 +211,8 @@
             "api_calls": [
                 {
                     "method":   "post",
-                    "api_path": "network/ethernet/dns/0",
-                    "cmd":      "del"
+                    "api_path": "conf/network/ethernet/dns/0",
+                    "cmd":      "delete"
                 }
             ]
         },
@@ -222,7 +222,7 @@
             "api_calls": [
                 {
                     "method":   "post",
-                    "api_path": "snmp",
+                    "api_path": "conf/snmp",
                     "cmd":      "set",
                     "data":     {"v1v2cEnabled": "false", "v3Enabled": "false"}
                 }
@@ -234,7 +234,7 @@
             "api_calls": [
                 {
                     "method":   "post",
-                    "api_path": "conf/contact",
+                    "api_path": "conf/network/ethernet",
                     "cmd":      "set",
                     "data":     {"label": "Bridge 0", "dhcpOn": "true", "enabled": "true"}
                 }
@@ -246,8 +246,8 @@
             "api_calls": [
                 {
                     "method":   "post",
-                    "api_path": "network/ethernet/address/0",
-                    "cmd":      "del"
+                    "api_path": "conf/network/ethernet/address/0",
+                    "cmd":      "delete"
                 }
             ]
         }

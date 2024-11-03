@@ -58,7 +58,6 @@ def make_api_call(
             case 'post':
                 request = requests.post(url, headers = headers, json = json_payload, verify = False)
         response = json.loads(request.text)
-        if not quiet: print(response)
         if response['retCode'] == 0:
             if not quiet: spinner.succeed(success_msg)
         else:
@@ -88,7 +87,7 @@ def interact_with_imd(
 
     headers = config['headers']
     api_base_url = config['api_base_url']
-    url = f'{api_base_url}{api_endpoint}'
+    url = f'{api_base_url}{api_endpoint}' if api_endpoint[0] != '/' else f'{config['imd_base_url']}{api_endpoint}'
 
     return make_api_call(config = config,
     url = url, 
@@ -181,8 +180,6 @@ def upgrade_imd_firmware(config: dict, quiet: bool = True) -> dict | bool:
                         headers = firmware_upgrade_headers, 
                         files={'firmware_file': open(firmware_file_path, 'rb')})
                     response = json.loads(request.text)
-                    print(response['retMsg'])
-                    if not quiet: print(response)
                     if response['retCode'] == 0:
                         if not quiet: print('Firmware upgraded successfully!')
                     else:
@@ -224,38 +221,42 @@ def apply_api_call(config: dict, config_item_name: str, api_call: dict, retry_at
             return apply_api_call(config, config_item_name, api_call, config['api_attempts'], quiet)
         return False
 
-    method, command, data, api_path = get_values_if_keys_exist(api_call, ['method', 'cmd', 'data', 'api_path'])
-    api_attempts, default_api_retry_time = get_values_if_keys_exist(config, ['default_api_attempts', 'default_api_retry_time'])
-    url = f'{config['api_base_url']}/{api_path}'
-    status_message: str = f'Setting {config_item_name}\n' if command == 'set' or 'add' else f'Removing {config_item_name}' if command == 'del' else ''
-    success_message: str = f'{config_item_name} set successfully!' if command == 'set' or 'add' else f'{config_item_name} removed successfully!' if command == 'del' else ''
-    failure_message: str = f'Failed to set {config_item_name}!' if command == 'set' else f'Failed to remove {config_item_name}!' if command == 'del' else ''
+    method, command, raw_data, api_path = get_values_if_keys_exist(api_call, ['method', 'cmd', 'data', 'api_path'])
+    if bool(raw_data):
+        data: dict = raw_data if type(raw_data) == dict else json.loads(raw_data.replace('\'', '\"'))
+    api_attempts, default_api_retry_time, headers = get_values_if_keys_exist(config, ['default_api_attempts', 'default_api_retry_time', 'headers'])
+    url = f'{config['api_base_url']}{api_path}' if api_path[0] != '/' else f'{config['imd_base_url']}{api_path}'
+    status_message: str = f'Setting {config_item_name}\n' if command == 'set' or 'add' else f'Removing {config_item_name}' if command == 'delete' else ''
+    success_message: str = f'{config_item_name} set successfully!' if command == 'set' or command == 'add' else f'{config_item_name} removed successfully!' if command == 'delete' else ''
+    failure_message: str = f'Failed to set {config_item_name}!' if command == 'set' else f'Failed to remove {config_item_name}!' if command == 'delete' else ''
     
     spinner = Halo(spinner = config['spinner'])
     if not quiet: spinner.start(text = config_item_name)
     try:
-        time.sleep(random() * .5)
-        if random() > 0.7:
-            raise requests.exceptions.ConnectionError('404: Host not found!')
-        if not quiet: spinner.succeed(text = success_message)
-        return True
-        # if not bool(data) and command == 'del': request = {'text': {"retCode": 0, "retMsg": "success"}} #requests.post(url, headers = headers,  verify = False)
-        # if bool(data) and method == 'post': request = {'text': {"retCode": 0, "retMsg": "success"}} #requests.post(url, headers = headers, json = data, verify = False)
-        # if bool(request):
-        #     response: dict = request['text'] #json.loads(request.text)
-        #     api_call_successful: bool = random() > 0.15#response['retCode'] == 0
-        #     api_response_message: str = response['retMsg']
-        #     if api_call_successful:
-        #         if not quiet and bool(success_message): spinner.succeed(text = success_message)
-        #         return True
-        #     else: 
-        #         if not quiet and bool(failure_message): spinner.fail(text = f'{failure_message} | IMD Error: {api_response_message}.')
-        #         return retry(retry_attempts, spinner)
-        #         return False 
+        if bool(raw_data) and method == 'post': 
+            if command == 'add': json_data: dict = {'token': '', 'cmd': 'add', 'data': data}
+            elif command == 'set': json_data = {'username': config['username'], 'password': config['password'], 'cmd': 'set', 'data': data}
+            request = requests.post(url, headers = headers, json = json_data, verify = False)
+        if not bool(raw_data) and command == 'delete':   
+            request = requests.post(url, headers = headers, json = {'username': config['username'], 'password': config['password'], 'cmd': 'delete'}, verify = False)
+
+        if bool(request):
+            response: dict = json.loads(request.text)
+            api_response_message: str = response['retMsg']
+            api_call_successful: bool = response['retCode'] == 0
+            credentials_already_set: bool = api_response_message == 'Not enough permissions' and api_path == 'auth'
+            config_item_already_deleted: bool = api_response_message == 'Path not found' and command == 'delete'
+            if api_call_successful or credentials_already_set or config_item_already_deleted:
+                if not quiet and bool(success_message): spinner.succeed(text = success_message)
+                return True
+            else:
+                print(url)
+                return retry(retry_attempts, spinner, f'{failure_message} | IMD Error: {api_response_message}.')
+                return False 
     except requests.exceptions.ConnectionError as error:
         return retry(retry_attempts, spinner, f'Error while interacting with IMD: \'{error}\'')
-    except Exception as error:
-        return retry(retry_attempts, spinner, f'Function \'{config_item_name}\' error: \'{error}\'')
+    # except Exception as error:
+    #     return retry(retry_attempts, spinner, f'Error applying \'{config_item_name}\' error: \'{error}\'')
 
     return False
 

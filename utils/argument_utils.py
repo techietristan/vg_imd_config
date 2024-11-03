@@ -15,6 +15,7 @@ def parse_args(system_arguments: list[str]):
     parser.add_argument('-u', '--upgrade',              help='Upgrade the firmware of the currently connected IMD.', action='store_true')
 
     parser.add_argument('--prompts_file',   help='Specify the interactive prompts file to use.')
+    parser.add_argument('--reset_script',   help='Remove all customized config and prompts files leaving only the default templates for these files.', action='store_true')
     parser.add_argument('--spinner',        help='Set the spinner to use during lengthy script operations (see https://github.com/manrajgrover/halo).')
     
 

@@ -132,8 +132,8 @@ def get_config(main_file: str, args: Namespace, quiet: bool = True) -> dict:
     is_first_run: bool = not bool(config_filenames) and not bool(prompts_filenames)
     if is_first_run and not quiet:
         print(format_bold('\nWelcome to the Vertiv Geist IMD Configuration Script!\n'))
-    config_filename: str | bool | None= args.config_file if bool(args.config_file) else get_filename('config', config_files_path = config_files_path, quiet = quiet)
-    prompts_filename: str | bool | None= args.prompts_file if bool (args.prompts_file) else get_filename('prompts', config_files_path = config_files_path, quiet = quiet)
+    config_filename: str | bool | None = args.config_file if bool(args.config_file) else get_filename('config', config_files_path = config_files_path, quiet = quiet)
+    prompts_filename: str | bool | None = args.prompts_file if bool (args.prompts_file) else get_filename('prompts', config_files_path = config_files_path, quiet = quiet)
     if type(config_filename) == str:
         json_file_path: str = os.path.join(config_files_path, config_filename)
     else:
@@ -151,6 +151,7 @@ def get_config(main_file: str, args: Namespace, quiet: bool = True) -> dict:
 
         finished_config = {**config, 
             "current_imd_ip": current_imd_ip,
+            "imd_base_url": f'https://{current_imd_ip}',
             "api_base_url": f'https://{current_imd_ip}/api/',
             "parsed_firmware_url": parsed_firmware_url,
             "interactive_prompts_filename": prompts_filename,
@@ -162,6 +163,13 @@ def get_config(main_file: str, args: Namespace, quiet: bool = True) -> dict:
             }
 
         return finished_config
+
+def get_credentials_from_imd_config(config: dict, imd_config: list[dict]) -> tuple[str, str]:
+    credentials_config_item: dict = [ config_item for config_item in imd_config if config_item['config_item'] == 'credentials' ][0]
+    data: dict = json.loads(credentials_config_item['api_calls'][0]['data'].replace('\'', '\"'))
+    username, password = data['username'], data['password']
+
+    return username, password
     
 def write_current_imd_config_to_file(config: dict, imd_config: list[dict], quiet: bool = True) -> None:
     prompts_filename, prompts_file_path, prompts_file_contents = get_prompts_file_contents(config)
@@ -183,7 +191,7 @@ def write_current_imd_config_to_file(config: dict, imd_config: list[dict], quiet
             print(f'Saving current IMD config to {imd_config_file_path}')
         imd_config_file.write(imd_config_file_contents)
 
-def get_previous_imd_config(config: dict) -> dict | bool:
+def get_previous_imd_config(config: dict) -> list[dict] | bool:
     prompts_filename, prompts_file_path, prompts_file_contents = get_prompts_file_contents(config)
     temp_imd_config_filename: str | bool = get_value_if_key_exists(prompts_file_contents, 'temp_imd_config_filename')
     config_files_path: str = get_value_if_key_exists(config, 'config_files_path')
@@ -197,10 +205,14 @@ def get_previous_imd_config(config: dict) -> dict | bool:
                 if 'salt: ' in imd_config_file_contents[0]:
                     salt: str = imd_config_file_contents[0].split(' ')[1]
                     previous_imd_config: str = decrypt(config, salt, imd_config_file_contents[1], passphrase) #type: ignore[assignment, arg-type]
-                    previous_imd_config_parsed: dict = json.loads(previous_imd_config)
-                    return previous_imd_config_parsed
+                    parsed_previous_imd_config: list[dict] = json.loads(previous_imd_config)
+
                 else:
-                    return json.loads(imd_config_file_contents[0])
+                    parsed_previous_imd_config = json.loads(imd_config_file_contents[0])
+                config['username'], config['password'] = get_credentials_from_imd_config(config, parsed_previous_imd_config)
+
+                return parsed_previous_imd_config
+                
         elif confirm(config, 'Delete this configuration? (y or n): '):
             os.remove(imd_config_file_path)
             return False

@@ -6,7 +6,7 @@ from utils.config_utils import get_config, update_prompts_file_with_defaults, wr
 from utils.encryption_utils import decrypt_prompts
 from utils.format_utils import format_yellow
 from utils.prompt_utils import get_unique_config_items, confirm_imd_config
-from utils.sys_utils import exit_with_code
+from utils.sys_utils import exit_with_code, remove_customized_files
 
 def main() -> int:
     try:
@@ -25,10 +25,13 @@ def main() -> int:
         elif args.upgrade:
             upgrade_imd_firmware(config = config, quiet = False)
         
+        elif args.reset_script:
+            remove_customized_files(config, quiet = False)        
+        
         elif not any (bool(value) for value in vars(args).values()):
             update_prompts_file_with_defaults(config)
             prompts: dict = decrypt_prompts(config)
-            previous_imd_config: dict | bool = get_previous_imd_config(config)
+            previous_imd_config: list[dict] | bool = get_previous_imd_config(config)
 
             if bool(previous_imd_config):
                 ordered_api_calls: list[dict] = previous_imd_config #type: ignore[assignment]
