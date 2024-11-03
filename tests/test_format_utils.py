@@ -105,7 +105,6 @@ class TestApplyFormattingFunctions(TestCase):
 
         format_functions: list[list] = test_string_formatter['format_functions']
         formatted_string = apply_formatting_functions({}, format_functions, '', test_string_parsed_promts)
-        print((formatted_string))
         self.assertEqual(expected_formatted_string, formatted_string)
 
 

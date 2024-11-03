@@ -250,13 +250,10 @@ def apply_api_call(config: dict, config_item_name: str, api_call: dict, retry_at
                 if not quiet and bool(success_message): spinner.succeed(text = success_message)
                 return True
             else:
-                print(url)
                 return retry(retry_attempts, spinner, f'{failure_message} | IMD Error: {api_response_message}.')
                 return False 
     except requests.exceptions.ConnectionError as error:
         return retry(retry_attempts, spinner, f'Error while interacting with IMD: \'{error}\'')
-    # except Exception as error:
-    #     return retry(retry_attempts, spinner, f'Error applying \'{config_item_name}\' error: \'{error}\'')
 
     return False
 
