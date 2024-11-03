@@ -1,12 +1,12 @@
 import base64, json, os
-from getpass import getpass
+
 from cryptography.fernet import Fernet, InvalidToken
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
 from utils.dict_utils import get_value_if_key_exists
 from utils.format_utils import format_red, format_blue
-from utils.parse_utils import is_exactly_one, contains_encrypted_defaults
+from utils.parse_utils import contains_encrypted_defaults
 from utils.prompt_utils import get_input
 
 encoding_format: str = 'utf-8'
@@ -28,7 +28,6 @@ def calculate_key(config: dict, salt: bytes, passphrase: str) -> Fernet:
     return encryption_key
 
 def encrypt(config: dict, passphrase: str, text_to_encrypt: str, existing_salt: str = '') -> tuple[str, str]:
-    encoded_passphrase: bytes = passphrase.encode(encoding_format)
     salt: bytes = bytes.fromhex(existing_salt) if bool(existing_salt) else os.urandom(16)
     encryption_key = calculate_key(config, salt, passphrase)
     encrypted_text: bytes = encryption_key.encrypt(text_to_encrypt.encode(encoding_format))
@@ -42,7 +41,7 @@ def decrypt(config: dict, salt: str, encrypted_text: str, passphrase: str) -> st
 
         return decrypted_text
         
-    except InvalidToken as token_error:   
+    except InvalidToken:   
         return False
 
 class DecryptionException(Exception):
@@ -52,7 +51,6 @@ def decrypt_prompt(config: dict, prompt: dict) -> dict:
     passphrase: str = get_value_if_key_exists(config, 'passphrase')
     salt: str = get_value_if_key_exists(prompt, 'salt')
     default_value: str = get_value_if_key_exists(prompt, 'default_value')
-    encrypt_default: bool = is_exactly_one(get_value_if_key_exists(prompt, 'encrypt_default'))
     if bool(salt) and bool(default_value) and bool(passphrase):
         decrypted_default_value: str | bool = decrypt(config, salt, default_value, passphrase)
         if bool(decrypted_default_value):
@@ -74,7 +72,7 @@ def decrypt_prompts(config: dict) -> dict:
     if contains_encrypted_defaults(prompts):
         if not bool(passphrase):
             print(f'Encrypted defaults found in {format_blue(prompts_filename)}.')
-            passphrase_prompt: str = f'Please enter the encryption passphrase'
+            passphrase_prompt: str = 'Please enter the encryption passphrase'
             config['passphrase'] = get_input(config, 'getpass', passphrase_prompt, confirm_input = False)
         try:
             decrypted_prompts: list[dict] = [

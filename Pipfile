@@ -15,6 +15,7 @@ py-mon = "*"
 coverage = "*"
 types-requests = "*"
 types-tqdm = "*"
+pyflakes = "*"
 
 [requires]
 python_version = "3.12"

@@ -100,5 +100,3 @@ class TestGetCredentialsFromImdConfig(TestCase):
         returned_credentails = get_credentials_from_imd_config({}, test_imd_config)
 
         self.assertEqual(expected_credentials, returned_credentails)
-
-    

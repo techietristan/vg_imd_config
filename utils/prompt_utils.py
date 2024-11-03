@@ -1,8 +1,7 @@
 from utils.dict_utils import get_value_if_key_exists
 from utils.format_utils import format_bold, format_red, format_blue, clear_line, format_user_input
-from utils.parse_utils import guess_next_hostname, verify_input, is_exactly_one, is_boolean_false
+from utils.parse_utils import verify_input, is_exactly_one, is_boolean_false
 
-import json
 from getpass import getpass
 from typing import Callable
 
@@ -16,33 +15,6 @@ def confirm(config: dict = {}, confirm_prompt: str = '', error = False) -> bool:
     invalid_response_prompt: str = format_red('Invlaid response, please enter \'y\' or \'n\': ')
 
     return True if response_is_positive else False if response_is_negative else confirm(config = config, confirm_prompt = invalid_response_prompt)
-
-def get_username(config: dict) -> str:
-    return input('Please enter the username: ').strip()
-
-def get_password(config: dict, prompt_text: str = 'Please enter the password', confirm_input: bool = True, quiet = False) -> str:
-    password: str = getpass(f'{prompt_text}: ')
-    if bool(confirm_input):
-        confirm_password: str = getpass(f'{prompt_text} again: ')
-
-        if password == confirm_password: 
-            return password
-        else:
-            if not quiet:
-                print(format_red('Passwords do not match. Please try again.'))
-            return get_password(config, prompt_text, confirm_input, quiet)
-    return password
-
-def update_credentials(config: dict) -> None:
-    username = get_username(config)
-    password = get_password(config)
-    config['username'] = username
-    config['password'] = password
-
-def get_credentials(config: dict) -> tuple:
-    if 'password' not in config.keys():
-        update_credentials(config)
-    return config['username'], config['password']
 
 def get_input(
         config: dict, 
@@ -70,6 +42,31 @@ def get_input(
         print(format_red('Invalid input. Please enter a valid value.'))
         return get_input(config, input_type, formatted_prompt_text, default_value, simulated_user_input, confirm_input)
 
+def get_username(config: dict) -> str:
+    return input('Please enter the username: ').strip()
+
+def get_password(config: dict, prompt_text: str = 'Please enter the password', confirm_input: bool = True, quiet = False) -> str:
+    password: str = getpass(f'{prompt_text}: ')
+    if bool(confirm_input):
+        confirm_password: str = getpass(f'{prompt_text} again: ')
+        if password != confirm_password: 
+            if not quiet: print(format_red('Passwords do not match. Please try again.'))
+            return get_password(config, prompt_text, confirm_input, quiet)            
+
+    return password
+
+def update_credentials(config: dict) -> None:
+    username = get_username(config)
+    password = get_password(config)
+    config['username'] = username
+    config['password'] = password
+
+def get_credentials(config: dict) -> tuple:
+    if 'password' not in config.keys():
+        update_credentials(config)
+    return config['username'], config['password']
+
+
 def validate_selection(options: list[str], selection: str = '') -> int:
     if not bool(selection):
         selection = get_input({}).strip()
@@ -93,16 +90,19 @@ def enumerate_options(config: dict, options: list[str], prompt: str = '', quiet 
             print(f'{index}. {option}')
     selection_index: int = validate_selection(options)
     return options[selection_index]
+
+def update_config(config: dict, config_item: str, formatted_user_input: str) -> None:
+    keys_to_auto_update: list[str] = [ 'username', 'password', 'hostname', 'location' ] 
+    if config_item in keys_to_auto_update: config[config_item] = formatted_user_input
+    return
        
 def get_prompt_function(config: dict, input_params: dict, quiet: bool = False) -> Callable | bool:
     try:
         config_item =       input_params['config_item']
-        config_item_name =  input_params['config_item_name']
         prompt_text =       input_params['prompt_text']
         example_text =      input_params['example_text']
         default_value =     get_value_if_key_exists(input_params, 'default_value')
         input_mode =        get_value_if_key_exists(input_params, 'input_mode')
-        api_calls =         get_value_if_key_exists(input_params, 'api_calls')
         test =              get_value_if_key_exists(input_params, 'test')
         
         input_type: str = 'none' if bool(test) else 'getpass' if input_mode == 'getpass' else 'input'
@@ -118,12 +118,11 @@ def get_prompt_function(config: dict, input_params: dict, quiet: bool = False) -
             is_valid_input = verify_input(config = config, input_params = input_params, user_input = user_input)
             if not is_valid_input:
                 clear_line()
-                if not quiet:
-                    invalid_input_warning: str = 'Invalid Password.' if input_type == 'getpass' else f'Invalid Input:\'{user_input}\''
-                    print(format_red(invalid_input_warning))
+                invalid_input_warning: str = 'Invalid Password.' if input_type == 'getpass' else f'Invalid Input:\'{user_input}\''
+                if not quiet: print(format_red(invalid_input_warning))
                 return prompt_function(config = config, simulated_user_input = simulated_user_input)
-            if config_item == 'username': config['username'] = formatted_user_input
-            if config_item == 'password': config['password'] = formatted_user_input
+            update_config(config, config_item, formatted_user_input)
+
             return {
                 "config_item": config_item,
                 "value": formatted_user_input,
@@ -156,9 +155,9 @@ def confirm_imd_config(config: dict, ordered_api_calls: list[dict]) -> bool:
         for api_call in ordered_api_calls
         if bool(get_value_if_key_exists(api_call, 'value_to_display')) and bool (get_value_if_key_exists(api_call, 'display_to_user'))
     ]
-    print('\nConfigure the currently connected IMD with the following parameters?')
+    print('\nConfigure the currently connected IMD with the following parameters?\n')
     for confirm_item in confirm_items:
         print(f'\t{confirm_item['config_item_name']}: {format_blue(confirm_item['value_to_display'])}')
-    imd_config_confirmed: bool = confirm(config, 'Please enter \'y\' or \'n\': ')
+    imd_config_confirmed: bool = confirm(config, '\nPlease enter \'y\' or \'n\': ')
 
     return imd_config_confirmed

@@ -6,7 +6,7 @@
     },
     "write_temp_imd_config_file": 1,
     "encrypt_temp_imd_config_file": 1,
-    "temp_imd_config_filename": "last_imd_config.txt",
+    "temp_imd_config_filename": "unfinished_imd_config.txt",
     "prompts": [
         {
             "config_item": "row",

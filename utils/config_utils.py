@@ -1,4 +1,4 @@
-import json, os, shutil, sys
+import json, os, shutil
 
 from argparse import Namespace
 from datetime import datetime
@@ -6,7 +6,7 @@ from datetime import datetime
 from utils.dict_utils import get_value_if_key_exists, get_values_if_keys_exist
 from utils.encryption_utils import encrypt, decrypt
 from utils.format_utils import format_red, format_blue, format_bold
-from utils.parse_utils import parse_firmware_url, verify_input, is_exactly_zero, is_exactly_one, contains_unspecified_defaults
+from utils.parse_utils import parse_firmware_url, verify_input, is_exactly_zero, contains_unspecified_defaults
 from utils.prompt_utils import confirm, enumerate_options, get_input
 from utils.sys_utils import exit_with_code
 
@@ -17,7 +17,7 @@ def get_encyrption_passphrase(config: dict, prompts_filename: str) -> str:
     passphrase: str = get_input(
         config = config, 
         input_type = 'getpass', 
-        formatted_prompt_text = f'Please enter the encryption passphrase')
+        formatted_prompt_text = 'Please enter the encryption passphrase')
     config['passphrase'] = passphrase
     return passphrase
 
@@ -198,7 +198,8 @@ def get_previous_imd_config(config: dict) -> list[dict] | bool:
     imd_config_file_path: str = os.path.join(config_files_path, temp_imd_config_filename) #type: ignore[arg-type]
     passphrase: str | bool = get_value_if_key_exists(config, 'passphrase')
     if os.path.isfile(imd_config_file_path):
-        print(f'Previous IMD configuration found: \'{format_blue(imd_config_file_path)}\'')
+        imd_config_file_modified_on: str = datetime.utcfromtimestamp(os.path.getmtime(imd_config_file_path)).strftime('%Y-%m-%d %H:%M:%S')
+        print(f'Unfinished IMD configuration found: \'{format_blue(temp_imd_config_filename)}\' last modified {format_blue(imd_config_file_modified_on)}.') #type: ignore[assignment, arg-type]
         if confirm(config, 'Load this configuration? (y or n): ') and bool(passphrase):
             with open(imd_config_file_path) as imd_config_file:
                 imd_config_file_contents: list = imd_config_file.read().splitlines()
@@ -218,3 +219,12 @@ def get_previous_imd_config(config: dict) -> list[dict] | bool:
             return False
 
     return False
+
+def remove_previous_imd_config(config: dict) -> None:
+    prompts_filename, prompts_file_path, prompts_file_contents = get_prompts_file_contents(config)
+    temp_imd_config_filename: str | bool = get_value_if_key_exists(prompts_file_contents, 'temp_imd_config_filename')
+    config_files_path: str = get_value_if_key_exists(config, 'config_files_path')
+    imd_config_file_path: str = os.path.join(config_files_path, temp_imd_config_filename) #type: ignore[arg-type]
+
+    if os.path.isfile(imd_config_file_path): os.remove(imd_config_file_path)
+    

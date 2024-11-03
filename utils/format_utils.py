@@ -1,8 +1,7 @@
-import functools, re, sys
+import sys
 
 from utils.dict_utils import get_value_if_key_exists
 from utils.parse_utils import is_exactly_one
-from typing import Pattern
 
 format_escape_strings: dict = {
     'red':      '\033[91m',

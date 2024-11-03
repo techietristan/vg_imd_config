@@ -1,6 +1,12 @@
-import functools, os, requests, shutil, sys
+import functools, json, os, requests, shutil, sys, time
+from halo import Halo #type: ignore[import-untyped]
 from tqdm.auto import tqdm
-from utils.prompt_utils import confirm
+
+from utils.api_utils import login_to_imd
+from utils.dict_utils import get_value_if_key_exists
+from utils.format_utils import format_blue, format_red
+from utils.parse_utils import is_vaild_firmware_version
+from utils.prompt_utils import confirm, get_credentials
 
 def download_and_extract_firmware(config: dict, firmware_download_destination: str, firmware_dir_path) -> bool:
     firmware_download_url: str = config['firmware_file_url']
@@ -57,3 +63,68 @@ def get_firmware_file_path(config: dict) -> tuple[str, str] | tuple[bool, bool]:
             else:
                 return False, False
     return firmware_file_path, firmware_filename
+
+def get_firmware_version(config: dict, quiet: bool = False) -> str | bool:
+    spinner: Halo = Halo(text = 'Checking current IMD firmware version...\n', spinner = config['spinner'])
+    api_url: str = config['api_base_url']
+    api_firmware_url: str= f'{api_url}sys/version'
+    headers: dict = config['headers']
+    try:
+        spinner.start()
+        firmware_response: dict = requests.get(api_firmware_url, headers = headers, verify = False).json()
+        response_code: int = firmware_response['retCode']
+        firmware_version: str = firmware_response['data']
+        if response_code == 0 and is_vaild_firmware_version(config = config, firmware_version = firmware_version):
+            if not quiet:
+                time.sleep(1)
+                spinner.succeed(f'\nCurrent IMD Firmware Version: {firmware_version}')
+            else:
+                spinner.stop()
+            return firmware_version
+        else:
+            spinner.fail(firmware_response)
+            raise Exception(firmware_response)
+    except Exception as error:
+        spinner.fail(f'Unable to get IMD firmware version: {error}\nPlease ensure you are able to ping the IMD.')
+        if confirm(config, confirm_prompt = 'Do you want to try again?: '):
+            return get_firmware_version(config = config, quiet = quiet)
+    return False
+
+def upgrade_imd_firmware(config: dict, quiet: bool = True) -> dict | bool:
+    current_firmware_version: str | bool = get_firmware_version(config, quiet = True)
+    target_firmware_version: str | bool = get_value_if_key_exists(config, 'firmware_target')
+    if current_firmware_version == target_firmware_version:
+        if not quiet: print(f'IMD firmware up to date (v.{format_blue(current_firmware_version)}).') #type: ignore[arg-type]
+        return False
+    if not confirm(config, f'Current IMD firmware version is {format_blue(current_firmware_version)}.\nUpgrade to {format_blue(target_firmware_version)}? (y or n): '): #type: ignore[arg-type]
+        return False
+
+    firmware_file_path, firmware_filename = get_firmware_file_path(config = config)
+    if not bool(firmware_file_path):
+        if not quiet: print(format_red('Unable to find or download firmware. Please check your configuration.'))
+        return False
+
+    username, password = get_credentials(config)
+    token: str | bool = login_to_imd(config)
+    firmware_upgrade_api_endpoint: str = f'https://{config['current_imd_ip']}/transfer/firmware?token={token}'
+    firmware_upgrade_headers: dict = {'Content_Type' : 'multipart/form-data'}
+    
+    @Halo(text = 'Upgrading IMD Firmware.', spinner = config['spinner'])
+    def upgrade_firmware(config):
+        try:
+            request = requests.post(
+                firmware_upgrade_api_endpoint, 
+                headers = firmware_upgrade_headers, 
+                files={'firmware_file': open(firmware_file_path, 'rb')})
+            response = json.loads(request.text)
+            if response['retCode'] == 0 and not quiet: print('Firmware upgraded successfully!')
+            else: print(format_red(f'IMD Error: {response}.'))
+            return response
+        except Exception as error:
+            print(format_red(f'\nError upgrading IMD firmware: {error}'))
+            if not confirm('\nDo you want to try again (y or n): '): return False
+            upgrade_firmware(config)
+
+    return upgrade_firmware(config)
+
+    return False

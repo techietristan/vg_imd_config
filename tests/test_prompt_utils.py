@@ -166,3 +166,18 @@ class TestGetPromptFunction(TestCase):
         }
         returned_function = utils.prompt_utils.get_prompt_function({}, input_params, quiet = True)
         self.assertFalse(returned_function)
+
+class TestUpdateConfig(TestCase):
+    def test_update_config(self):
+        test_config = {}
+        test_updates = {
+            'username': 'test_username',
+            'password': 'test_password',
+            'hostname': 'test_imd_hostname',
+            'location': 'test_location',
+        }
+
+        for config_item in [ config_item for config_item in test_updates.keys() ]:
+            utils.prompt_utils.update_config(test_config, config_item, test_updates[config_item])
+
+        self.assertDictEqual(test_config, test_updates)

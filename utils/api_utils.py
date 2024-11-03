@@ -1,42 +1,12 @@
-import json, requests, sys, time, urllib3
+import json, requests, time, urllib3
 from halo import Halo # type: ignore
-from random import random
 from requests import Response
-from typing import Callable
 
-from utils.dict_utils import get_dict_with_matching_key_value_pair, get_value_if_key_exists, get_values_if_keys_exist
-from utils.firmware_utils import get_firmware_file_path
-from utils.format_utils import format_green, format_blue, format_red, get_formatted_config_items
-from utils.parse_utils import is_vaild_firmware_version
+from utils.dict_utils import get_dict_with_matching_key_value_pair, get_values_if_keys_exist
+from utils.format_utils import format_red, get_formatted_config_items
 from utils.prompt_utils import confirm, get_credentials
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-
-def get_firmware_version(config: dict, quiet: bool = False) -> str | bool:
-    spinner: Halo = Halo(text = 'Checking current IMD firmware version...\n', spinner = config['spinner'])
-    api_url: str = config['api_base_url']
-    api_firmware_url: str= f'{api_url}sys/version'
-    headers: dict = config['headers']
-    try:
-        spinner.start()
-        firmware_response: dict = requests.get(api_firmware_url, headers = headers, verify = False).json()
-        response_code: int = firmware_response['retCode']
-        firmware_version: str = firmware_response['data']
-        if response_code == 0 and is_vaild_firmware_version(config = config, firmware_version = firmware_version):
-            if not quiet:
-                time.sleep(1)
-                spinner.succeed(f'\nCurrent IMD Firmware Version: {firmware_version}')
-            else:
-                spinner.stop()
-            return firmware_version
-        else:
-            spinner.fail(firmware_response)
-            raise Exception(firmware_response)
-    except Exception as error:
-        spinner.fail(f'Unable to get IMD firmware version: {error}\nPlease ensure you are able to ping the IMD.')
-        if confirm(config, confirm_prompt = 'Do you want to try again?: '):
-            return get_firmware_version(config = config, quiet = quiet)
-    return False
 
 def make_api_call(
     config: dict,
@@ -101,7 +71,7 @@ def interact_with_imd(
 
 def set_imd_creds(config: dict, quiet: bool = True) -> dict | bool:
     username, password = get_credentials(config)
-    creds_api_endpoint: str = f'auth/'
+    creds_api_endpoint: str = 'auth/'
     new_user_settings: dict = {'token': '', 'cmd': 'add', 'data': {'username': username, 'password': password, 'enabled': 'true', 'control': 'true', 'admin': 'true', 'language': 'en'}}
 
     interact_with_imd(
@@ -141,7 +111,7 @@ def login_to_imd(config: dict, quiet: bool = True) -> str | bool:
 
 def reset_imd_to_factory_defaults(config: dict, quiet: bool = True) -> dict | None:
     username, password = get_credentials(config)
-    reset_api_endpoint: str = f'sys/'
+    reset_api_endpoint: str = 'sys/'
     factory_reset_json: dict = {'username': username, 'password': password, 'cmd': "reset", 'data': {'target': "defaults"}}
 
     interact_with_imd(
@@ -157,44 +127,6 @@ def reset_imd_to_factory_defaults(config: dict, quiet: bool = True) -> dict | No
         success_msg = 'Successfully Reset IMD to Factory Defaults!')
     
     return None
-
-def upgrade_imd_firmware(config: dict, quiet: bool = True) -> dict | bool:
-    current_firmware_version = get_firmware_version(config, quiet = True)
-    target_firmware_version = config['firmware_target']
-    if current_firmware_version == target_firmware_version:
-        print(f'IMD firmware already up to date (v.{current_firmware_version}).')
-        return False
-    elif confirm(config, f'Current IMD firmware version is {current_firmware_version}.\nUpgrade to {target_firmware_version}? (y or n): '):
-        firmware_file_path, firmware_filename = get_firmware_file_path(config = config)
-        if bool(firmware_file_path):
-            username, password = get_credentials(config)
-            token = login_to_imd(config)
-            firmware_upgrade_api_endpoint: str = f'https://{config['current_imd_ip']}/transfer/firmware?token={token}'
-            firmware_upgrade_headers: dict = {'Content_Type' : 'multipart/form-data'}
-            
-            @Halo(text = 'Upgrading IMD Firmware...', spinner = config['spinner'])
-            def upgrade_firmware(config):
-                try:
-                    request = requests.post(
-                        firmware_upgrade_api_endpoint, 
-                        headers = firmware_upgrade_headers, 
-                        files={'firmware_file': open(firmware_file_path, 'rb')})
-                    response = json.loads(request.text)
-                    if response['retCode'] == 0:
-                        if not quiet: print('Firmware upgraded successfully!')
-                    else:
-                        print(format_red(f'IMD Error: {response}.'))
-                    return response
-                except Exception as error:
-                    print(format_red(f'\nError upgrading IMD firmware: {error}'))
-                    if confirm('\nDo you want to try again (y or n): '):
-                        upgrade_firmware(config)
-
-            return upgrade_firmware(config)
-        else:
-            print(format_red('Unable to find or download firmware. Please check your configuration.'))
-        
-    return False
 
 def get_ordered_api_calls(config: dict, prompts: dict, unique_config_items: list[dict]) -> list[dict]:
     api_call_sequence: list[str] = prompts['api_call_sequence']
@@ -231,7 +163,7 @@ def apply_api_call(config: dict, config_item_name: str, api_call: dict, retry_at
     failure_message: str = f'Failed to set {config_item_name}!' if command == 'set' else f'Failed to remove {config_item_name}!' if command == 'delete' else ''
     
     spinner = Halo(spinner = config['spinner'])
-    if not quiet: spinner.start(text = config_item_name)
+    if not quiet: spinner.start(text = status_message)
     try:
         if bool(raw_data) and method == 'post': 
             if command == 'add': json_data: dict = {'token': '', 'cmd': 'add', 'data': data}
