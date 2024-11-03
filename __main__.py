@@ -28,9 +28,12 @@ def main(config: dict = {}) -> int:
                 unique_config_items: list[dict] = get_unique_config_items(config, prompts)
                 ordered_api_calls = get_ordered_api_calls(config, prompts, unique_config_items)
                 write_current_imd_config_to_file(config, ordered_api_calls, quiet = False)
-            if bool(confirm_imd_config(config, ordered_api_calls)) and wait_for_ping(config):
-                upgrade_imd_firmware(config = config, quiet = False)
-                if apply_all_api_calls(config, ordered_api_calls):
+            if confirm_imd_config(config, ordered_api_calls) and wait_for_ping(config):
+                if not upgrade_imd_firmware(config = config, quiet = False):
+                    if not confirm(config, 'Do you want to continue with the configuration? (y or n): '):
+                        print(format_blue('Exiting Script'))
+                        exit_with_code(0)
+                if wait_for_ping(config) and apply_all_api_calls(config, ordered_api_calls):
                     remove_previous_imd_config(config)
                     print('\nIMD configuration successful!')
             if confirm(config, 'Would you like to configure another IMD? (y or n): '): main(config)

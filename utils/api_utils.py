@@ -4,6 +4,7 @@ from requests import Response
 
 from utils.dict_utils import get_dict_with_matching_key_value_pair, get_values_if_keys_exist
 from utils.format_utils import format_red, get_formatted_config_items
+from utils.parse_utils import is_exactly_zero
 from utils.prompt_utils import confirm, get_credentials
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -12,7 +13,7 @@ def make_api_call(
     config: dict,
     url: str, 
     headers: dict, 
-    json_payload: dict, 
+    json_payload: dict = {}, 
     action: str = 'post',
     status_msg: str = '',
     success_msg: str = '',
@@ -21,20 +22,23 @@ def make_api_call(
 
     spinner = Halo(text = f'{status_msg}\n', spinner = config['spinner'])
     try:
-        spinner.start()
+        if not quiet: spinner.start()
         match action:
             case 'get':
                 request = requests.get(url, headers = headers, verify = False)
             case 'post':
                 request = requests.post(url, headers = headers, json = json_payload, verify = False)
         response = json.loads(request.text)
-        if response['retCode'] == 0:
+        response_code = response['retCode']
+        if is_exactly_zero(response_code):
             if not quiet: spinner.succeed(success_msg)
         else:
-            spinner.fail(f'IMD Error: {response['retMsg']}.')
+            response_message: str = response['retMsg']
+            failure_message: str = response_message if bool(response_message) else f'Return Code: {response_code}' if bool(response_code) else response
+            if not quiet: spinner.fail(f'IMD Error: {failure_message}.')
         return response
     except requests.exceptions.ConnectionError as error:
-        spinner.fail(f'Error while interacting with IMD: {error}.')
+        if not quiet: spinner.fail(f'Error while interacting with IMD: {error}.')
         if confirm(config, 'Do you want to try again? (y or n): '):
             make_api_call(config, url, headers, json_payload, action, status_msg, success_msg, function_name, quiet)
     except Exception as error:
@@ -69,12 +73,12 @@ def interact_with_imd(
     function_name = function_name,
     quiet = quiet)
 
-def set_imd_creds(config: dict, quiet: bool = True) -> dict | bool:
+def set_imd_creds(config: dict, quiet: bool = True) -> Response | bool:
     username, password = get_credentials(config)
     creds_api_endpoint: str = 'auth/'
     new_user_settings: dict = {'token': '', 'cmd': 'add', 'data': {'username': username, 'password': password, 'enabled': 'true', 'control': 'true', 'admin': 'true', 'language': 'en'}}
 
-    interact_with_imd(
+    return interact_with_imd(
         config = config, 
         api_endpoint = creds_api_endpoint,
         json_payload = new_user_settings,
@@ -92,7 +96,10 @@ def login_to_imd(config: dict, quiet: bool = True) -> str | bool:
     username, password = get_credentials(config)
     login_api_endpoint: str = f'auth/{username}'
     login_json: dict = {'token': '', 'cmd': 'login', 'data': {'password': password}}
-
+    admin_status: Response | bool = interact_with_imd(config, 'auth', {}, username, password, 'get', quiet = True)
+    if type(admin_status) != bool: admin_exists: bool = admin_status['retCode'] != 1000 #type: ignore[index]
+    else: admin_exists = False
+    if not admin_exists: set_imd_creds(config, True)
     response = interact_with_imd(
         config = config, 
         api_endpoint = login_api_endpoint,
@@ -105,8 +112,11 @@ def login_to_imd(config: dict, quiet: bool = True) -> str | bool:
         status_msg = 'Logging into IMD.',
         success_msg = 'Successfully Logged into IMD!')
     
-    if type(response) == Response:
-        return response['data']['token'] # type: ignore
+    if type(response) == dict:
+        try:
+            return response['data']['token'] # type: ignore
+        except KeyError as error:
+           print(format_red(f'Unable to log into IMD. Please reset the IMD to factory defaults.'))
     return False
 
 def reset_imd_to_factory_defaults(config: dict, quiet: bool = True) -> dict | None:
