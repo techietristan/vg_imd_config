@@ -3,9 +3,10 @@ from halo import Halo # type: ignore
 from requests import Response
 
 from utils.dict_utils import get_dict_with_matching_key_value_pair, get_values_if_keys_exist
-from utils.format_utils import format_red, get_formatted_config_items
+from utils.format_utils import format_red, format_yellow, get_formatted_config_items
 from utils.parse_utils import is_exactly_zero
 from utils.prompt_utils import confirm, get_credentials
+from utils.sys_utils import exit_with_code
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -39,8 +40,10 @@ def make_api_call(
         return response
     except requests.exceptions.ConnectionError as error:
         if not quiet: spinner.fail(f'Error while interacting with IMD: {error}.')
-        if confirm(config, 'Do you want to try again? (y or n): '):
-            make_api_call(config, url, headers, json_payload, action, status_msg, success_msg, function_name, quiet)
+        if not confirm(config, 'Do you want to try again? (y or n): '):
+            if not confirm(config, 'Do you want to continue with the configuration? (y or n): '):
+                exit_with_code(1)
+        else: make_api_call(config, url, headers, json_payload, action, status_msg, success_msg, function_name, quiet)
     except Exception as error:
         if not quiet: spinner.fail(f'Function \'{function_name}\' error: \'{error}\'')
         
@@ -115,8 +118,10 @@ def login_to_imd(config: dict, quiet: bool = True) -> str | bool:
     if type(response) == dict:
         try:
             return response['data']['token'] # type: ignore
-        except KeyError as error:
-           print(format_red(f'Unable to log into IMD. Please reset the IMD to factory defaults.'))
+        except KeyError:
+            if not confirm(config, format_red('Unable to log into IMD. Do you want to try again? (y or n): ')):
+                if not quiet: print(format_red('Unable to log into IMD. Please reset the IMD to factory defaults.'))
+            else: login_to_imd(config, quiet)
     return False
 
 def reset_imd_to_factory_defaults(config: dict, quiet: bool = True) -> dict | None:
@@ -159,9 +164,12 @@ def apply_api_call(config: dict, config_item_name: str, api_call: dict, retry_at
             time.sleep(retry_wait_time)
             if not quiet: print("\033[A\033[A")
             return apply_api_call(config, config_item_name, api_call, retry_attempts - 1, quiet) 
-        if confirm(config, 'Do you want to try again? (y or n): '):
-            return apply_api_call(config, config_item_name, api_call, config['api_attempts'], quiet)
-        return False
+        if not confirm(config, 'Do you want to try again? (y or n): '):
+            if not confirm(config, 'Do you want to continue with the configuration? (y or n): '): 
+                if not quiet: print(format_yellow('Exiting the script. You may wish to reset the IMD to factory defaults.'))
+                exit_with_code(1)
+            return False
+        return apply_api_call(config, config_item_name, api_call, config['api_attempts'], quiet)
 
     method, command, raw_data, api_path = get_values_if_keys_exist(api_call, ['method', 'cmd', 'data', 'api_path'])
     if bool(raw_data):

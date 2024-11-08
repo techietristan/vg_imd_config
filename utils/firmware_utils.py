@@ -1,4 +1,4 @@
-import functools, json, os, requests, shutil, sys, time
+import functools, os, requests, shutil, sys, time
 from halo import Halo #type: ignore[import-untyped]
 from tqdm.auto import tqdm
 from tqdm.utils import CallbackIOWrapper
@@ -117,7 +117,7 @@ def upgrade_imd_firmware(config: dict, quiet: bool = True) -> bool:
                 with open(firmware_file_path, 'rb') as file_bytes:
                     with tqdm(total = firmware_file_size, unit = 'B', unit_scale = True, unit_divisor = 1024) as total_transferred:
                         wrapped_file = CallbackIOWrapper(total_transferred.update, file_bytes, 'read')
-                        request = requests.post(
+                        requests.post(
                             firmware_upgrade_api_endpoint, 
                             headers = firmware_upgrade_headers, 
                             files = { 'firmware_file': wrapped_file },

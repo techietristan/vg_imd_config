@@ -9,6 +9,7 @@ from utils.format_utils import format_red, format_blue, format_bold
 from utils.parse_utils import parse_firmware_url, verify_input, is_exactly_zero, contains_unspecified_defaults
 from utils.prompt_utils import confirm, enumerate_options, get_input
 from utils.sys_utils import exit_with_code
+from utils.time_utils import get_file_modification_time
 
 spinners: list[str] = ['dots', 'dots2', 'dots3', 'dots4', 'dots5', 'dots6', 'dots7', 'dots8', 'dots9', 'dots10', 'dots11', 'dots12', 'line', 'line2', 'pipe', 'simpleDots', 'simpleDotsScrolling', 'star', 'star2', 'flip', 'hamburger', 'growVertical', 'growHorizontal', 'balloon', 'balloon2', 'noise', 'bounce', 'boxBounce', 'boxBounce2', 'triangle', 'arc', 'circle', 'squareCorners', 'circleQuarters', 'circleHalves', 'squish', 'toggle', 'toggle2', 'toggle3', 'toggle4', 'toggle5', 'toggle6', 'toggle7', 'toggle8', 'toggle9', 'toggle10', 'toggle11', 'toggle12', 'toggle13', 'arrow', 'arrow2', 'arrow3', 'bouncingBar', 'bouncingBall', 'smiley', 'monkey', 'hearts', 'clock', 'earth', 'moon', 'runner', 'pong', 'shark', 'dqpb']
 
@@ -198,8 +199,9 @@ def get_previous_imd_config(config: dict) -> list[dict] | bool:
     imd_config_file_path: str = os.path.join(config_files_path, temp_imd_config_filename) #type: ignore[arg-type]
     passphrase: str | bool = get_value_if_key_exists(config, 'passphrase')
     if os.path.isfile(imd_config_file_path):
-        imd_config_file_modified_on: str = datetime.utcfromtimestamp(os.path.getmtime(imd_config_file_path)).strftime('%Y-%m-%d %H:%M:%S')
-        print(f'Unfinished IMD configuration found: \'{format_blue(temp_imd_config_filename)}\' last modified {format_blue(imd_config_file_modified_on)}.') #type: ignore[assignment, arg-type]
+        modified_on: str = get_file_modification_time(imd_config_file_path, '%Y-%m-%d')
+        modified_at: str = get_file_modification_time(imd_config_file_path, '%H:%M:%S')
+        print(f'Unfinished IMD configuration found: \'{format_blue(temp_imd_config_filename)}\', modified on {format_blue(modified_on)} at {format_blue(modified_at)}.') #type: ignore[arg-type]
         if confirm(config, 'Load this configuration? (y or n): ') and bool(passphrase):
             with open(imd_config_file_path) as imd_config_file:
                 imd_config_file_contents: list = imd_config_file.read().splitlines()
