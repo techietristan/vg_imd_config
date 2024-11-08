@@ -1,11 +1,11 @@
 import functools, os, requests, shutil, sys, time
 from halo import Halo #type: ignore[import-untyped]
 from tqdm.auto import tqdm
-from tqdm.utils import CallbackIOWrapper
 
 from utils.api_utils import login_to_imd
 from utils.dict_utils import get_value_if_key_exists
 from utils.format_utils import format_blue, format_red
+from utils.network_utils import wait_for_ping
 from utils.parse_utils import is_vaild_firmware_version
 from utils.prompt_utils import confirm, get_credentials
 
@@ -17,7 +17,7 @@ def download_and_extract_firmware(config: dict, firmware_download_destination: s
         firmware_request = requests.get(firmware_download_url, headers = download_headers, stream = True, allow_redirects = True, timeout = download_timeout)
         if firmware_request.status_code != 200:
             firmware_request.raise_for_status()
-            raise RuntimeError(f'Error while attemping to download firmware file: {firmware_request.status_code}')
+            raise RuntimeError(f'Error while attempting to download firmware file: {firmware_request.status_code}')
         firmware_file_size: int = int(firmware_request.headers.get('Content-Length', 0))
         desc: str = '(Unknown total file size)' if firmware_file_size == 0 else ''
         firmware_request.raw.read = functools.partial(firmware_request.raw.read, decode_content = True) # type: ignore
@@ -70,67 +70,78 @@ def get_firmware_version(config: dict, quiet: bool = False) -> str | bool:
     api_url: str = config['api_base_url']
     api_firmware_url: str= f'{api_url}sys/version'
     headers: dict = config['headers']
+
     try:
         if not quiet: spinner.start()
-        firmware_response: dict = requests.get(api_firmware_url, headers = headers, verify = False).json()
-        response_code: int = firmware_response['retCode']
-        firmware_version: str = firmware_response['data']
-        if response_code == 0 and is_vaild_firmware_version(config = config, firmware_version = firmware_version):
-            if not quiet:
-                time.sleep(1)
-                if not quiet: spinner.succeed(f'\nCurrent IMD Firmware Version: {firmware_version}')
+        if wait_for_ping(config, quiet = True):
+            firmware_response: dict = requests.get(api_firmware_url, headers = headers, verify = False).json()
+            response_code: int = firmware_response['retCode']
+            firmware_version: str = firmware_response['data']
+            if response_code == 0 and is_vaild_firmware_version(config = config, firmware_version = firmware_version):
+                if not quiet:
+                    time.sleep(1)
+                    spinner.succeed(f'\nCurrent IMD Firmware Version: {firmware_version}')
+                return firmware_version
             else:
-                if not quiet: spinner.stop()
-            return firmware_version
-        else:
-            if not quiet: spinner.fail(firmware_response)
-            raise Exception(firmware_response)
+                if not quiet: spinner.fail(firmware_response)
+                raise Exception(firmware_response)
+        else: 
+            if not quiet: 
+                spinner.fail('Unable to reach IMD.')
+                if confirm(config, 'Do you want to try again? (y or n): '):
+                    return get_firmware_version(config, quiet)
+
     except Exception as error:
-        if not quiet: spinner.fail(f'Unable to get IMD firmware version: {error}\nPlease ensure you are able to ping the IMD.')
-        if confirm(config, confirm_prompt = 'Do you want to try again?: '):
-            return get_firmware_version(config = config, quiet = quiet)
+        if not quiet: 
+            spinner.fail(f'Unable to get IMD firmware version: {error}')
+            if confirm(config, confirm_prompt = 'Do you want to try again?: '):
+                return get_firmware_version(config = config, quiet = quiet)
     return False
 
-def upgrade_imd_firmware(config: dict, quiet: bool = True) -> bool:
+def wait_for_firmware_upgrade(config: dict, target_firmware_version: str | bool, wait_time_in_seconds: int = 10) -> bool:
+    current_firmware_version: str | bool = get_firmware_version(config, True)
+    if not current_firmware_version != target_firmware_version:
+        time.sleep(wait_time_in_seconds)
+        return wait_for_firmware_upgrade(config, target_firmware_version, wait_time_in_seconds)
+    return True
+
+def upgrade_imd_firmware(config: dict, target_firmware_version: str | bool, firmware_file_path: str | bool, token: str | bool, quiet: bool = False) -> bool:
+    firmware_upgrade_api_endpoint: str = f'https://{config['current_imd_ip']}/transfer/firmware?token={token}'
+    firmware_upgrade_headers: dict = {'Content_Type' : 'multipart/form-data'}
+    spinner: Halo = Halo(text = f'Uploading firmware v.{format_blue(target_firmware_version)}, please wait...\n', spinner = config['spinner']) #type: ignore[arg-type]
+
+    try:
+        if not quiet: spinner.start()
+        with open(firmware_file_path, 'rb') as file_bytes:
+            requests.post(
+                firmware_upgrade_api_endpoint, 
+                headers = firmware_upgrade_headers, 
+                files = { 'firmware_file': file_bytes },
+                verify = False)
+            if not quiet: spinner.succeed('Firmware file uploaded successfully, please wait while the IMD restarts.')
+            wait_for_firmware_upgrade(config, target_firmware_version, 10)
+            return True
+    except Exception as firmware_upgrade_error:
+        if not quiet: spinner.fail('f\n Error upgrading firmware: {firmware_upgrade_error}')
+        if not confirm(config, f'\nDo you want to try again (y or n): '): 
+            return True
+        upgrade_imd_firmware(config, target_firmware_version, firmware_file_path, token)
+    return False
+
+def prompt_to_upgrade_imd_firmware(config: dict, quiet: bool = True) -> bool:
     current_firmware_version: str | bool = get_firmware_version(config, quiet = True)
     target_firmware_version: str | bool = get_value_if_key_exists(config, 'firmware_target')
-    if current_firmware_version == target_firmware_version:
+    if current_firmware_version == target_firmware_version and type(current_firmware_version) == str:
         if not quiet: print(f'IMD firmware up to date (v.{format_blue(current_firmware_version)}).') #type: ignore[arg-type]
         return True
     if not confirm(config, f'Current IMD firmware version is {format_blue(current_firmware_version)}.\nUpgrade to {format_blue(target_firmware_version)}? (y or n): '): #type: ignore[arg-type]
         return True
-
     firmware_file_path, firmware_filename = get_firmware_file_path(config = config)
     if not bool(firmware_file_path):
         if not quiet: print(format_red('Unable to find or download firmware. Please check your configuration.'))
         return False
-
     username, password = get_credentials(config)
     token: str | bool = login_to_imd(config, quiet = True)
     if bool(token):
-        firmware_upgrade_api_endpoint: str = f'https://{config['current_imd_ip']}/transfer/firmware?token={token}'
-        firmware_upgrade_headers: dict = {'Content_Type' : 'multipart/form-data'}
-        
-        def upgrade_firmware(config):
-            try:
-                firmware_file_size: int = os.stat(firmware_file_path).st_size
-                with open(firmware_file_path, 'rb') as file_bytes:
-                    with tqdm(total = firmware_file_size, unit = 'B', unit_scale = True, unit_divisor = 1024) as total_transferred:
-                        wrapped_file = CallbackIOWrapper(total_transferred.update, file_bytes, 'read')
-                        requests.post(
-                            firmware_upgrade_api_endpoint, 
-                            headers = firmware_upgrade_headers, 
-                            files = { 'firmware_file': wrapped_file },
-                            verify = False)
-                        if not quiet: print('Firmware file uploaded successfully, please wait while the IMD restarts.')
-                        time.sleep(10)
-                        return True
-            except Exception:
-                pass
-            if not confirm('\nDo you want to try again (y or n): '): 
-                return True
-            upgrade_firmware(config)
-
-        return upgrade_firmware(config)
-
+        return upgrade_imd_firmware(config, target_firmware_version, firmware_file_path, token, quiet)
     return False

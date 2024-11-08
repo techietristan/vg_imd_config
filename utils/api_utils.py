@@ -6,6 +6,7 @@ from utils.dict_utils import get_dict_with_matching_key_value_pair, get_values_i
 from utils.format_utils import format_red, format_yellow, get_formatted_config_items
 from utils.parse_utils import is_exactly_zero
 from utils.prompt_utils import confirm, get_credentials
+from utils.network_utils import wait_for_ping
 from utils.sys_utils import exit_with_code
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -39,11 +40,12 @@ def make_api_call(
             if not quiet: spinner.fail(f'IMD Error: {failure_message}.')
         return response
     except requests.exceptions.ConnectionError as error:
-        if not quiet: spinner.fail(f'Error while interacting with IMD: {error}.')
-        if not confirm(config, 'Do you want to try again? (y or n): '):
-            if not confirm(config, 'Do you want to continue with the configuration? (y or n): '):
-                exit_with_code(1)
-        else: make_api_call(config, url, headers, json_payload, action, status_msg, success_msg, function_name, quiet)
+        if not quiet: 
+            spinner.fail(f'Error while interacting with IMD: {error}.')
+            if not confirm(config, 'Do you want to try again? (y or n): '):
+                if not confirm(config, 'Do you want to continue with the configuration? (y or n): '):
+                    exit_with_code(1)
+            else: make_api_call(config, url, headers, json_payload, action, status_msg, success_msg, function_name, quiet)
     except Exception as error:
         if not quiet: spinner.fail(f'Function \'{function_name}\' error: \'{error}\'')
         
@@ -76,6 +78,13 @@ def interact_with_imd(
     function_name = function_name,
     quiet = quiet)
 
+def get_admin_status(config: dict) -> bool:
+    admin_status: Response | bool = interact_with_imd(config, 'auth', {}, '', '', 'get', quiet = True)
+    if type(admin_status) != bool: admin_exists: bool = not admin_status['retCode'] == 1000 #type: ignore[index]
+    else: admin_exists = False
+    
+    return admin_exists
+
 def set_imd_creds(config: dict, quiet: bool = True) -> Response | bool:
     username, password = get_credentials(config)
     creds_api_endpoint: str = 'auth/'
@@ -99,9 +108,8 @@ def login_to_imd(config: dict, quiet: bool = True) -> str | bool:
     username, password = get_credentials(config)
     login_api_endpoint: str = f'auth/{username}'
     login_json: dict = {'token': '', 'cmd': 'login', 'data': {'password': password}}
-    admin_status: Response | bool = interact_with_imd(config, 'auth', {}, username, password, 'get', quiet = True)
-    if type(admin_status) != bool: admin_exists: bool = admin_status['retCode'] != 1000 #type: ignore[index]
-    else: admin_exists = False
+    admin_exists: bool = get_admin_status(config)
+
     if not admin_exists: set_imd_creds(config, True)
     response = interact_with_imd(
         config = config, 
@@ -121,27 +129,32 @@ def login_to_imd(config: dict, quiet: bool = True) -> str | bool:
         except KeyError:
             if not confirm(config, format_red('Unable to log into IMD. Do you want to try again? (y or n): ')):
                 if not quiet: print(format_red('Unable to log into IMD. Please reset the IMD to factory defaults.'))
-            else: login_to_imd(config, quiet)
+            else: return login_to_imd(config, quiet)
     return False
 
-def reset_imd_to_factory_defaults(config: dict, quiet: bool = True) -> dict | None:
-    username, password = get_credentials(config)
-    reset_api_endpoint: str = 'sys/'
-    factory_reset_json: dict = {'username': username, 'password': password, 'cmd': "reset", 'data': {'target': "defaults"}}
+def reset_imd_to_factory_defaults(config: dict, quiet: bool = True) -> Response | bool:
+    if wait_for_ping(config, quiet = False):
+        admin_exists: bool = get_admin_status(config)
+        if not admin_exists and not quiet:
+            print(format_yellow('The IMD is already set to factory defaults.'))
+            return False
+        username, password = get_credentials(config)
+        reset_api_endpoint: str = 'sys/'
+        factory_reset_json: dict = {'username': username, 'password': password, 'cmd': "reset", 'data': {'target': "defaults"}}
 
-    interact_with_imd(
-        config = config, 
-        api_endpoint = reset_api_endpoint,
-        json_payload = factory_reset_json,
-        username = username,
-        password = password, 
-        action = 'post', 
-        quiet = quiet, 
-        function_name = 'reset_imd_to_factory_defaults', 
-        status_msg = 'Resetting IMD to Factory Defaults.',
-        success_msg = 'Successfully Reset IMD to Factory Defaults!')
+        return interact_with_imd(
+            config = config, 
+            api_endpoint = reset_api_endpoint,
+            json_payload = factory_reset_json,
+            username = username,
+            password = password, 
+            action = 'post', 
+            quiet = quiet, 
+            function_name = 'reset_imd_to_factory_defaults', 
+            status_msg = 'Resetting IMD to Factory Defaults.',
+            success_msg = 'Successfully Reset IMD to Factory Defaults!')
     
-    return None
+    return False
 
 def get_ordered_api_calls(config: dict, prompts: dict, unique_config_items: list[dict]) -> list[dict]:
     api_call_sequence: list[str] = prompts['api_call_sequence']
