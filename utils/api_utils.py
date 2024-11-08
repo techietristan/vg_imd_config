@@ -79,8 +79,8 @@ def interact_with_imd(
     quiet = quiet)
 
 def get_admin_status(config: dict) -> bool:
-    admin_status: Response | bool = interact_with_imd(config, 'auth', {}, '', '', 'get', quiet = True)
-    if type(admin_status) != bool: admin_exists: bool = not admin_status['retCode'] == 1000 #type: ignore[index]
+    admin_status: Response | bool = interact_with_imd(config, 'sys/state/adminExists', {}, '', '', 'get', quiet = True)
+    if type(admin_status) != bool: admin_exists: bool = bool(admin_status['data']) #type: ignore[index]
     else: admin_exists = False
     
     return admin_exists

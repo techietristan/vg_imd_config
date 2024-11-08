@@ -80,7 +80,7 @@ def get_firmware_version(config: dict, quiet: bool = False) -> str | bool:
             if response_code == 0 and is_vaild_firmware_version(config = config, firmware_version = firmware_version):
                 if not quiet:
                     time.sleep(1)
-                    spinner.succeed(f'\nCurrent IMD Firmware Version: {firmware_version}')
+                    spinner.succeed(f'\nCurrent IMD Firmware Version: {format_blue(firmware_version)}')
                 return firmware_version
             else:
                 if not quiet: spinner.fail(firmware_response)
@@ -108,7 +108,7 @@ def wait_for_firmware_upgrade(config: dict, target_firmware_version: str | bool,
 def upgrade_imd_firmware(config: dict, target_firmware_version: str | bool, firmware_file_path: str | bool, token: str | bool, quiet: bool = False) -> bool:
     firmware_upgrade_api_endpoint: str = f'https://{config['current_imd_ip']}/transfer/firmware?token={token}'
     firmware_upgrade_headers: dict = {'Content_Type' : 'multipart/form-data'}
-    spinner: Halo = Halo(text = f'Uploading firmware v.{format_blue(target_firmware_version)}, please wait...\n', spinner = config['spinner']) #type: ignore[arg-type]
+    spinner: Halo = Halo(text = f'Uploading Firmware v.{format_blue(target_firmware_version)}\n', spinner = config['spinner']) #type: ignore[arg-type]
 
     try:
         if not quiet: spinner.start()
@@ -119,6 +119,7 @@ def upgrade_imd_firmware(config: dict, target_firmware_version: str | bool, firm
                 files = { 'firmware_file': file_bytes },
                 verify = False)
             if not quiet: spinner.succeed('Firmware file uploaded successfully, please wait while the IMD restarts.')
+            time.sleep(140)
             wait_for_firmware_upgrade(config, target_firmware_version, 10)
             return True
     except Exception as firmware_upgrade_error:
@@ -131,11 +132,14 @@ def upgrade_imd_firmware(config: dict, target_firmware_version: str | bool, firm
 def prompt_to_upgrade_imd_firmware(config: dict, quiet: bool = True) -> bool:
     current_firmware_version: str | bool = get_firmware_version(config, quiet = True)
     target_firmware_version: str | bool = get_value_if_key_exists(config, 'firmware_target')
+    if type(current_firmware_version) == bool and not quiet:
+        print(format_red('Unable to get current firmware version.'))
+        if confirm(config, 'Do you want to try again? (y or n): '):
+            return prompt_to_upgrade_imd_firmware(config, quiet = quiet)
     if current_firmware_version == target_firmware_version and type(current_firmware_version) == str:
         if not quiet: print(f'IMD firmware up to date (v.{format_blue(current_firmware_version)}).') #type: ignore[arg-type]
         return True
-    if not confirm(config, f'Current IMD firmware version is {format_blue(current_firmware_version)}.\nUpgrade to {format_blue(target_firmware_version)}? (y or n): '): #type: ignore[arg-type]
-        return True
+    if not confirm(config, f'Current IMD firmware version is {format_blue(current_firmware_version)}.\nUpgrade to {format_blue(target_firmware_version)}? (y or n): '): return True#type: ignore[arg-type]
     firmware_file_path, firmware_filename = get_firmware_file_path(config = config)
     if not bool(firmware_file_path):
         if not quiet: print(format_red('Unable to find or download firmware. Please check your configuration.'))
