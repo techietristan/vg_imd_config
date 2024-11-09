@@ -1,7 +1,6 @@
 import json, os, shutil
 
 from argparse import Namespace
-from datetime import datetime
 
 from utils.dict_utils import get_value_if_key_exists, get_values_if_keys_exist
 from utils.encryption_utils import encrypt, decrypt
@@ -14,10 +13,10 @@ from utils.time_utils import get_file_modification_time
 spinners: list[str] = ['dots', 'dots2', 'dots3', 'dots4', 'dots5', 'dots6', 'dots7', 'dots8', 'dots9', 'dots10', 'dots11', 'dots12', 'line', 'line2', 'pipe', 'simpleDots', 'simpleDotsScrolling', 'star', 'star2', 'flip', 'hamburger', 'growVertical', 'growHorizontal', 'balloon', 'balloon2', 'noise', 'bounce', 'boxBounce', 'boxBounce2', 'triangle', 'arc', 'circle', 'squareCorners', 'circleQuarters', 'circleHalves', 'squish', 'toggle', 'toggle2', 'toggle3', 'toggle4', 'toggle5', 'toggle6', 'toggle7', 'toggle8', 'toggle9', 'toggle10', 'toggle11', 'toggle12', 'toggle13', 'arrow', 'arrow2', 'arrow3', 'bouncingBar', 'bouncingBall', 'smiley', 'monkey', 'hearts', 'clock', 'earth', 'moon', 'runner', 'pong', 'shark', 'dqpb']
 
 def get_encyrption_passphrase(config: dict, prompts_filename: str) -> str:
-    print(f'Encrypted defaults found in {format_blue(prompts_filename)}. Please set a passphrase for encrypting and decrypting these values.')
+    print(f'Encrypted defaults found in \'{format_blue(prompts_filename)}\'. Please set a passphrase for encrypting and decrypting these values.')
     passphrase: str = get_input(
-        config = config, 
-        input_type = 'getpass', 
+        config = config,
+        input_type = 'getpass',
         formatted_prompt_text = 'Please enter the encryption passphrase')
     config['passphrase'] = passphrase
     return passphrase

@@ -95,3 +95,12 @@ def get_formatted_config_items(config: dict, prompts: dict, config_items: list[d
         for formatter in formatters ]
 
     return formatted_config_items
+
+def get_status_messages(config: dict, config_item_name: str, command: str) -> tuple[str, ...]:
+    command_adds: bool = bool(command == 'set' or command == 'add')
+    command_removes: bool = bool(command == 'delete')
+    status_message: str =   f'Setting {format_yellow(config_item_name)}\n'          if command_adds else f'Removing {format_yellow(config_item_name)}\n'            if command_removes else ''
+    success_message: str =  f'{format_blue(config_item_name)} set successfully!'    if command_adds else f'{format_blue(config_item_name)} removed successfully!'   if command_removes else ''
+    failure_message: str =  f'Failed to set {format_red(config_item_name)}!'        if command_adds else f'Failed to remove {format_red(config_item_name)}!'        if command_removes else ''
+
+    return status_message, success_message, failure_message

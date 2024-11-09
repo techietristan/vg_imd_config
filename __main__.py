@@ -43,6 +43,7 @@ def main(config: dict = {}) -> int:
                 if wait_for_ping(config) and apply_all_api_calls(config, ordered_api_calls):
                     remove_previous_imd_config(config)
                     print('\nIMD configuration successful!')
+            if bool(previous_imd_config) and confirm(config, 'Would you like to delete this configuration? (y or n): '): remove_previous_imd_config(config)
             if confirm(config, 'Would you like to configure another IMD? (y or n): '): main(config)
             
         print(format_blue('Exiting Script'))

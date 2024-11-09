@@ -123,8 +123,8 @@ def upgrade_imd_firmware(config: dict, target_firmware_version: str | bool, firm
             wait_for_firmware_upgrade(config, target_firmware_version, 10)
             return True
     except Exception as firmware_upgrade_error:
-        if not quiet: spinner.fail('f\n Error upgrading firmware: {firmware_upgrade_error}')
-        if not confirm(config, f'\nDo you want to try again (y or n): '): 
+        if not quiet: spinner.fail(f'\n Error upgrading firmware: {firmware_upgrade_error}')
+        if not confirm(config, '\nDo you want to try again (y or n): '): 
             return True
         upgrade_imd_firmware(config, target_firmware_version, firmware_file_path, token)
     return False

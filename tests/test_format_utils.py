@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from utils.format_utils import apply_formatting_function, apply_formatting_functions, format_user_input, get_value_to_display, get_formatted_config_items
+from utils.format_utils import apply_formatting_function, apply_formatting_functions, format_user_input, get_value_to_display, get_formatted_config_items, get_status_messages, format_red, format_yellow, format_blue
 
 class TestApplyFormattingFunction(TestCase):
     def test_apply_user_input_formatting_function_zfill(self):
@@ -220,3 +220,16 @@ class TestGetValueToDisplay(TestCase):
         self.assertEqual(expected_value_to_return, returned_value)
         self.assertEqual(None, returned_value_missing_config_items)
 
+class TestGetStatusMessages(TestCase):
+    def test_get_status_messages(self):
+        test_inputs_and_expected_outputs: list[list[str]] = [
+            ['test_item_1', 'set', f'Setting {format_yellow('test_item_1')}\n', f'{format_blue('test_item_1')} set successfully!', f'Failed to set {format_red('test_item_1')}!'],
+            ['test_item_2', 'add', f'Setting {format_yellow('test_item_2')}\n', f'{format_blue('test_item_2')} set successfully!', f'Failed to set {format_red('test_item_2')}!'],
+            ['test_item_3', 'delete', f'Removing {format_yellow('test_item_3')}\n', f'{format_blue('test_item_3')} removed successfully!', f'Failed to remove {format_red('test_item_3')}!'],
+            ['test_item_4', 'unknown_command', '', '', ''],
+        ]
+    
+        for test_item in test_inputs_and_expected_outputs:
+            expected_output: tuple[str, ...] = (test_item[2], test_item[3], test_item[4])
+            actual_output: tuple[str, ...] = get_status_messages({}, test_item[0], test_item[1])
+            self.assertEqual(expected_output, actual_output)

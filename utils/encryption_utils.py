@@ -71,7 +71,7 @@ def decrypt_prompts(config: dict) -> dict:
     passphrase = get_value_if_key_exists(config, 'passphrase')
     if contains_encrypted_defaults(prompts):
         if not bool(passphrase):
-            print(f'Encrypted defaults found in {format_blue(prompts_filename)}.')
+            print(f'Encrypted defaults found in \'{format_blue(prompts_filename)}\'.')
             passphrase_prompt: str = 'Please enter the encryption passphrase'
             config['passphrase'] = get_input(config, 'getpass', passphrase_prompt, confirm_input = False)
         try:

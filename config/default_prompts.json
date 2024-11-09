@@ -1,5 +1,5 @@
 {
-    "version": "0.1",
+    "version": "0.1.0",
     "greeting": {
         "text": "\nWelcome to the Vertiv Geist IMD Configuration Script!\n",
         "display": 1
@@ -71,7 +71,7 @@
         {
             "config_item": "secondary_ntp",
             "config_item_name": "Secondary NTP Server",
-            "prompt_text": "the secondary NTP FQDN",
+            "prompt_text": "secondary NTP FQDN",
             "example_text": "time.secondary.net",
             "verify_functions": [["is_domain_name"]],
             "input_mode": "input",

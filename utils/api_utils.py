@@ -3,7 +3,7 @@ from halo import Halo # type: ignore
 from requests import Response
 
 from utils.dict_utils import get_dict_with_matching_key_value_pair, get_values_if_keys_exist
-from utils.format_utils import format_red, format_yellow, get_formatted_config_items
+from utils.format_utils import format_red, format_yellow, format_green, format_blue, get_formatted_config_items, get_status_messages
 from utils.parse_utils import is_exactly_zero
 from utils.prompt_utils import confirm, get_credentials
 from utils.network_utils import wait_for_ping
@@ -189,10 +189,7 @@ def apply_api_call(config: dict, config_item_name: str, api_call: dict, retry_at
         data: dict = raw_data if type(raw_data) == dict else json.loads(raw_data.replace('\'', '\"'))
     api_attempts, default_api_retry_time, headers = get_values_if_keys_exist(config, ['default_api_attempts', 'default_api_retry_time', 'headers'])
     url = f'{config['api_base_url']}{api_path}' if api_path[0] != '/' else f'{config['imd_base_url']}{api_path}'
-    status_message: str = f'Setting {config_item_name}\n' if command == 'set' or 'add' else f'Removing {config_item_name}' if command == 'delete' else ''
-    success_message: str = f'{config_item_name} set successfully!' if command == 'set' or command == 'add' else f'{config_item_name} removed successfully!' if command == 'delete' else ''
-    failure_message: str = f'Failed to set {config_item_name}!' if command == 'set' else f'Failed to remove {config_item_name}!' if command == 'delete' else ''
-    
+    status_message, success_message, failure_message = get_status_messages(config, config_item_name, command)
     spinner = Halo(spinner = config['spinner'])
     if not quiet: spinner.start(text = status_message)
     try:
@@ -202,12 +199,11 @@ def apply_api_call(config: dict, config_item_name: str, api_call: dict, retry_at
             request = requests.post(url, headers = headers, json = json_data, verify = False)
         if not bool(raw_data) and command == 'delete':   
             request = requests.post(url, headers = headers, json = {'username': config['username'], 'password': config['password'], 'cmd': 'delete'}, verify = False)
-
         if bool(request):
             response: dict = json.loads(request.text)
             api_response_message: str = response['retMsg']
-            api_call_successful: bool = response['retCode'] == 0
-            credentials_already_set: bool = api_response_message == 'Not enough permissions' and api_path == 'auth'
+            api_call_successful: bool = bool(response['retCode'] == 0)
+            credentials_already_set: bool = api_path == 'auth' and api_response_message == 'Not enough permissions'
             config_item_already_deleted: bool = api_response_message == 'Path not found' and command == 'delete'
             if api_call_successful or credentials_already_set or config_item_already_deleted:
                 if not quiet and bool(success_message): spinner.succeed(text = success_message)
