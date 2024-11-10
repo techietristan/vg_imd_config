@@ -5,7 +5,7 @@ from utils.parse_utils import contains_encrypted_defaults, has_encrypted_default
 test_config: dict = {
     "hostname_format": {
         "hostname_regex": "(.+)([a,b,A,B])(\\d)$",
-        "variable_group_index": 1,
+        "variable_group_index": True,
         "sequence": ['a', 'b']
     }
 }
@@ -190,43 +190,43 @@ class TestParseFirmwareUrl(TestCase):
 class TestVerifyInput(TestCase):
     is_int_input_params: dict = {
         "verify_functions": [["is_int"]],
-        "empty_allowed": 0
+        "empty_allowed": False
     }
     is_one_of_input_params: dict = {
         "verify_functions": [["is_one_of", ["a", "b"]]],
-        "empty_allowed": 0
+        "empty_allowed": False
     }
     is_int_input_params_empty_allowed: dict = {
         "verify_functions": [["is_int"]],
-        "empty_allowed": 1
+        "empty_allowed": True
     }
     is_one_of_input_params_empty_allowed: dict = {
         "verify_functions": [["is_one_of", ["a", "b"]]],
-        "empty_allowed": 1
+        "empty_allowed": True
     }
     is_between_input_params: dict = {
         "verify_functions": [["is_between", 1, 300]],
-        "empty_allowed": 0
+        "empty_allowed": False
     }
     is_hostname_input_params: dict = {
         "verify_functions": [["is_hostname"]],
-        "empty_allowed": 0
+        "empty_allowed": False
     }
     is_domain_name_input_params: dict = {
         "verify_functions": [["is_domain_name"]],
-        "empty_allowed": 0
+        "empty_allowed": False
     }
     is_valid_username_input_params: dict = {
         "verify_functions": [["is_valid_username"]],
-        "empty_allowed": 0
+        "empty_allowed": False
     }
     no_verify_function_params_empty_allowed: dict = {
         "verify_functions": [[]],
-        "empty_allowed": 1
+        "empty_allowed": True
     }
     no_verify_function_params_empty_not_allowed: dict = {
         "verify_functions": [[]],
-        "empty_allowed": 0
+        "empty_allowed": False
     }
 
     def test_verify_input_valid_int(self):
@@ -351,19 +351,19 @@ class TestVerifyInput(TestCase):
 
 class TestContainsUnspecifiedDefault(TestCase):
     unspecified_default_1: dict = {
-        "unique_value": 0,
+        "unique_value": False,
         "default_value": ""
     }
     specified_default_1: dict = {
-        "unique_value": 0,
+        "unique_value": False,
         "default_value": "default_value_1",
     }
     unique_value_1: dict = {
-        "unique_value": 1,
+        "unique_value": True,
         "default_value": ""
     }
     unique_value_without_default_key_1: dict = {
-        "unique_value": 1
+        "unique_value": True
     }
 
     def test_unspecified_non_unique_value_returns_true(self):
@@ -380,28 +380,28 @@ class TestContainsUnspecifiedDefault(TestCase):
 
 class TestContainsUnspecifiedDefaults(TestCase):
     unspecified_default_1: dict = {
-        "unique_value": 0,
+        "unique_value": False,
         "default_value": ""
     }
     unspecified_default_2: dict = {
-        "unique_value": 0,
+        "unique_value": False,
         "default_value": ""
     }
 
     specified_default_1: dict = {
-        "unique_value": 0,
+        "unique_value": False,
         "default_value": "default_value_1",
     }
     specified_default_2: dict = {
-        "unique_value": 0,
+        "unique_value": False,
         "default_value": "default_value_2",
     }
     unique_value_1: dict = {
-        "unique_value": 1,
+        "unique_value": True,
         "default_value": ""
     }
     unique_value_without_default_key_1: dict = {
-        "unique_value": 1
+        "unique_value": True
     }
 
     specififed: list[dict] = [ specified_default_1, specified_default_2, unique_value_1, unique_value_without_default_key_1 ]
@@ -418,15 +418,15 @@ class TestContainsUnspecifiedDefaults(TestCase):
 
 class TestHasEncryptedDefault(TestCase):
     prompt_with_encrypted_value = {
-        "encrypt_default": 1,
+        "encrypt_default": True,
         "salt": "abc123",
         "default_value": "abc123" }
 
     prompt_without_encrypted_value_1 = {
-        "encrypt_default": 0}
+        "encrypt_default": False}
 
     prompt_without_encrypted_value_2 = {
-        "encrypt_default": 0,
+        "encrypt_default": False,
         "salt": "",
         "default_value": ""}
 
@@ -441,12 +441,12 @@ class TestHasEncryptedDefault(TestCase):
 class TestContainsEncryptedDefaults(TestCase):
     prompts_with_encrypted_values = [
         {
-            "encrypt_default": 1,
+            "encrypt_default": True,
             "salt": "abc123",
             "default_value": "abc123"
         },
         {
-            "encrypt_default": 0,
+            "encrypt_default": False,
             "salt": "",
             "default_value": ""
         }
@@ -454,10 +454,10 @@ class TestContainsEncryptedDefaults(TestCase):
 
     prompts_without_encrypted_values = [
         {
-            "encrypt_default": 0,
+            "encrypt_default": False,
         },
         {
-            "encrypt_default": 0,
+            "encrypt_default": False,
             "salt": "",
             "default_value": ""
         }

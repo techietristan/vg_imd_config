@@ -1,7 +1,6 @@
 import sys
 
 from utils.dict_utils import get_value_if_key_exists
-from utils.parse_utils import is_exactly_one
 
 format_escape_strings: dict = {
     'red':      '\033[91m',
@@ -83,7 +82,7 @@ def get_formatted_config_items(config: dict, prompts: dict, config_items: list[d
         {  
             'config_item': formatter['config_item'],
             'config_item_name': formatter['config_item_name'],
-            'display_to_user': is_exactly_one(get_value_if_key_exists(formatter, 'display_to_user')),
+            'display_to_user': bool(get_value_if_key_exists(formatter, 'display_to_user')),
             'value_to_display': get_value_to_display(config, formatter, config_items),
             'api_calls': [ {
                 'cmd': api_call['cmd'],

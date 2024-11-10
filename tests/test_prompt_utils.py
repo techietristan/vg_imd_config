@@ -99,14 +99,14 @@ class TestGetPromptFunction(TestCase):
             "input_mode": "input",
             "default_value": "",
             "api_calls": [""],
-            "empty_allowed": 0,
-            "required": 1,
-            "test": 1
+            "empty_allowed": False,
+            "required": True,
+            "test": True
         }
         expected_return_dict = {
             "config_item": "row",
             "value": "07",
-            "test": 1
+            "test": True
         }  
         returned_function = utils.prompt_utils.get_prompt_function({}, input_params, quiet = True)
         self.assertDictEqual(returned_function({}, '7'), expected_return_dict)
@@ -122,14 +122,14 @@ class TestGetPromptFunction(TestCase):
             "input_mode": "input",
             "default_value": "",
             "api_calls": [""],
-            "empty_allowed": 0,
-            "required": 1,
-            "test": 1
+            "empty_allowed": False,
+            "required": True,
+            "test": True
         }
         expected_return_dict = {
             "config_item": "pdu_letter",
             "value": "b",
-            "test": 1
+            "test": True
         }  
         returned_function = utils.prompt_utils.get_prompt_function({}, input_params, quiet = True)
         self.assertDictEqual(returned_function({}, 'B'), expected_return_dict)
@@ -145,9 +145,9 @@ class TestGetPromptFunction(TestCase):
             "input_mode": "input",
             "default_value": "",
             "api_calls": [""],
-            "empty_allowed": 0,
-            "required": 1,
-            "test": 0
+            "empty_allowed": False,
+            "required": True,
+            "test": False
         }
         returned_function = utils.prompt_utils.get_prompt_function({}, input_params, quiet = True)
         self.assertTrue(callable(returned_function))
@@ -160,9 +160,9 @@ class TestGetPromptFunction(TestCase):
             "verify_functions": [["is_int"]],
             "format_functions": [["zfill", 2]],
             "api_calls": [""],
-            "empty_allowed": 0,
-            "required": 1,
-            "test": 1
+            "empty_allowed": False,
+            "required": True,
+            "test": True
         }
         returned_function = utils.prompt_utils.get_prompt_function({}, input_params, quiet = True)
         self.assertFalse(returned_function)

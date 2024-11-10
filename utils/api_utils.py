@@ -3,7 +3,7 @@ from halo import Halo # type: ignore
 from requests import Response
 
 from utils.dict_utils import get_dict_with_matching_key_value_pair, get_values_if_keys_exist
-from utils.format_utils import format_red, format_yellow, format_green, format_blue, get_formatted_config_items, get_status_messages
+from utils.format_utils import format_red, format_yellow, get_formatted_config_items, get_status_messages
 from utils.parse_utils import is_exactly_zero
 from utils.prompt_utils import confirm, get_credentials
 from utils.network_utils import wait_for_ping

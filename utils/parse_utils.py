@@ -131,7 +131,7 @@ def verify_input(config: dict, input_params: dict, user_input: str) -> bool:
 
 def contains_unspecified_default(prompt: dict) -> bool:
     try:
-        is_unique_value: bool = is_exactly_one(prompt['unique_value'])
+        is_unique_value: bool = bool(prompt['unique_value'])
         has_default_value: bool = bool(prompt['default_value'])
         default_is_unspecified: bool = not is_unique_value and not has_default_value
         return default_is_unspecified
@@ -145,7 +145,7 @@ def contains_unspecified_defaults(prompts: list[dict]) -> bool:
     return any(unspecified_defaults)
 
 def has_encrypted_default(prompt: dict) -> bool:
-    encrypt_default: bool = is_exactly_one(get_value_if_key_exists(prompt, 'encrypt_default'))
+    encrypt_default: bool = get_value_if_key_exists(prompt, 'encrypt_default')
     salt: bool = bool(get_value_if_key_exists(prompt, 'salt'))
     default_value: bool = bool(get_value_if_key_exists(prompt, 'default_value'))
     return bool(encrypt_default and salt and default_value)

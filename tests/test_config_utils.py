@@ -1,7 +1,7 @@
 from unittest import TestCase
 
 from utils.config_utils import get_config, get_prompt_with_default, get_credentials_from_imd_config
-from utils.encryption_utils import encrypt, decrypt
+from utils.encryption_utils import decrypt
 
 test_config: dict = {'encryption_iterations': 64}
 
@@ -27,14 +27,14 @@ class TestGetPromptWithDefault(TestCase):
             "config_item": "imd_hostname",
             "prompt_text": "",
             "default_value": "",
-            "test": 1}
+            "test": True}
     
         unique_prompt_explicit: dict ={
             "config_item": "imd_hostname",
-            "unique_value": 1,
+            "unique_value": True,
             "prompt_text": "",
             "default_value": "",
-            "test": 1}
+            "test": True}
         
         returned_default_prompt_implicit = get_prompt_with_default(test_config, unique_prompt_implicit)
         returned_default_prompt_explicit = get_prompt_with_default(test_config, unique_prompt_explicit)
@@ -47,12 +47,12 @@ class TestGetPromptWithDefault(TestCase):
 
         encrypted_non_unique_prompt: dict =  {
             "config_item": "primary_ntp",
-            "unique_value": 0,
-            "encrypt_default": 1,
+            "unique_value": False,
+            "encrypt_default": True,
             "salt": "",
             "default_value": "",
             "input_mode": "none",
-            "test": 1}
+            "test": True}
 
         returned_default_prompt = get_prompt_with_default(test_config, encrypted_non_unique_prompt, encryption_passphrase = test_passphrase, salt = b'', simulated_user_input = test_value)
         returned_default_value = returned_default_prompt['default_value']
@@ -69,17 +69,17 @@ class TestGetPromptWithDefault(TestCase):
                 
         non_encrypted_non_unique_prompt: dict = {
             "input_mode": "none",
-            "unique_value": 0,
-            "encrypt_default": 0,
+            "unique_value": False,
+            "encrypt_default": False,
             "default_value": "",
-            "test": 1}
+            "test": True}
         
         expected_prompt: dict = {
             "input_mode": "none",
-            "unique_value": 0,
-            "encrypt_default": 0,
+            "unique_value": False,
+            "encrypt_default": False,
             "default_value": test_value,
-            "test": 1}
+            "test": True}
         
         returned_default_prompt = get_prompt_with_default(test_config, non_encrypted_non_unique_prompt, encryption_passphrase = test_passphrase, salt = test_salt, simulated_user_input = test_value)
         self.assertDictEqual(returned_default_prompt, expected_prompt)

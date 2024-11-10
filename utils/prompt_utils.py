@@ -1,6 +1,6 @@
 from utils.dict_utils import get_value_if_key_exists
 from utils.format_utils import format_bold, format_red, format_blue, clear_line, format_user_input
-from utils.parse_utils import verify_input, is_exactly_one, is_boolean_false
+from utils.parse_utils import verify_input, is_boolean_false
 
 from getpass import getpass
 from typing import Callable
@@ -10,8 +10,8 @@ def confirm(config: dict = {}, confirm_prompt: str = '', error = False) -> bool:
     user_response = input(prompt).lower().strip()
     affirmative_responses = ['yes', 'ye', 'y']
     negative_responses = ['no', 'n']
-    response_is_positive: bool = user_response in affirmative_responses
-    response_is_negative: bool = user_response in negative_responses
+    response_is_positive: bool = bool(user_response in affirmative_responses)
+    response_is_negative: bool = bool(user_response in negative_responses)
     invalid_response_prompt: str = format_red('Invlaid response, please enter \'y\' or \'n\': ')
 
     return True if response_is_positive else False if response_is_negative else confirm(config = config, confirm_prompt = invalid_response_prompt)
@@ -137,7 +137,7 @@ def get_prompt_function(config: dict, input_params: dict, quiet: bool = False) -
         return False
 
 def get_unique_config_items(config: dict, prompts: dict, quiet = False) -> list[dict]:
-    if bool(prompts['greeting']['display']) and is_exactly_one(config['display_greeting']):
+    if bool(prompts['greeting']['display']) and bool(config['display_greeting']):
         print(format_bold(prompts['greeting']['text']))
         prompts['greeting']['display'] = 0
 

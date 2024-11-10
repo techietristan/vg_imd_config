@@ -2,10 +2,10 @@
     "version": "0.1.0",
     "greeting": {
         "text": "\nWelcome to the Vertiv Geist IMD Configuration Script!\n",
-        "display": 1
+        "display": true
     },
-    "write_temp_imd_config_file": 1,
-    "encrypt_temp_imd_config_file": 1,
+    "write_temp_imd_config_file": true,
+    "encrypt_temp_imd_config_file": true,
     "temp_imd_config_filename": "unfinished_imd_config.txt",
     "prompts": [
         {
@@ -16,8 +16,8 @@
             "verify_functions": [["is_int"]],
             "format_functions": [["zfill", 2]],
             "input_mode": "input",
-            "unique_value": 1,
-            "empty_allowed": 0
+            "unique_value": true,
+            "empty_allowed": false
         },
         {
             "config_item": "rack",
@@ -27,8 +27,8 @@
             "verify_functions": [["is_int"]],
             "format_functions": [["zfill", 2]],
             "input_mode": "input",
-            "unique_value": 1,
-            "empty_allowed": 0
+            "unique_value": true,
+            "empty_allowed": false
         },
         {
             "config_item": "pdu_letter",
@@ -38,11 +38,11 @@
             "verify_functions": [["is_one_of", ["a", "b"]]],
             "format_functions": [["upper"]],
             "guess_function": "get_next_in_series",
-            "remember_value": 1,
+            "remember_value": true,
             "input_mode": "input",
-            "unique_value": 1,
+            "unique_value": true,
             "default_value": "a",
-            "empty_allowed": 0
+            "empty_allowed": false
         },
         {
             "config_item": "imd_hostname",
@@ -51,10 +51,10 @@
             "example_text": "ab-0123456-ps-b1",
             "verify_functions": [["is_hostname"]],
             "guess_function": "get_next_hostname",
-            "remember_value": 1,
+            "remember_value": true,
             "input_mode": "input",
-            "unique_value": 1,
-            "empty_allowed": 0
+            "unique_value": true,
+            "empty_allowed": false
         },
         {
             "config_item": "primary_ntp",
@@ -63,10 +63,10 @@
             "example_text": "time.primary.net",
             "verify_functions": [["is_domain_name"]],
             "input_mode": "input",
-            "unique_value": 0,
-            "encrypt_default": 1,
+            "unique_value": false,
+            "encrypt_default": true,
             "salt": "",
-            "empty_allowed": 0
+            "empty_allowed": false
         },
         {
             "config_item": "secondary_ntp",
@@ -75,10 +75,10 @@
             "example_text": "time.secondary.net",
             "verify_functions": [["is_domain_name"]],
             "input_mode": "input",
-            "unique_value": 0,
-            "encrypt_default": 1,
+            "unique_value": false,
+            "encrypt_default": true,
             "salt": "",
-            "empty_allowed": 0
+            "empty_allowed": false
         },
         {
             "config_item": "username",
@@ -88,9 +88,9 @@
             "verify_functions": [["is_valid_username"]],
             "format_functions": [[]],
             "input_mode": "input",
-            "empty_allowed": 0,
-            "unique_value": 0,
-            "encrypt_default": 1,
+            "empty_allowed": false,
+            "unique_value": false,
+            "encrypt_default": true,
             "salt": "",
             "default_value": ""
         },
@@ -102,9 +102,9 @@
             "verify_functions": [["is_between", 1, 300]],
             "format_functions": [[]],
             "input_mode": "getpass",
-            "empty_allowed": 0,
-            "unique_value": 0,
-            "encrypt_default": 1,
+            "empty_allowed": false,
+            "unique_value": false,
+            "encrypt_default": true,
             "salt": "",
             "default_value": ""
         }
@@ -115,7 +115,7 @@
             "config_item": "credentials",
             "config_item_name": "Username and Password",
             "format_functions": [[ "apply_string_template", "{{'username': '{username}', 'password': '{password}', 'enabled': 'true', 'contorol': 'true', 'admin': 'true'}}"]],
-            "display_to_user": 1,
+            "display_to_user": true,
             "value_to_display": "{username}, *******",
             "api_calls": [
                 {
@@ -129,7 +129,7 @@
             "config_item": "label",
             "config_item_name": "Hostname Label",
             "format_functions": [[ "apply_string_template", "{{'label': '{imd_hostname}', 'hostname': '{imd_hostname}' }}"]],
-            "display_to_user": 1,
+            "display_to_user": true,
             "value_to_display": "{imd_hostname}",
             "api_calls": [
                 {
@@ -143,7 +143,7 @@
             "config_item": "ntp",
             "config_item_name": "NTP Servers",
             "format_functions": [[ "apply_string_template", "{{'ntpServer1': '{primary_ntp}', 'ntpServer2': '{secondary_ntp}'}}"]],
-            "display_to_user": 1,
+            "display_to_user": true,
             "value_to_display": "{primary_ntp}, {secondary_ntp}",
             "api_calls": [
                 {
@@ -157,7 +157,7 @@
             "config_item": "location",
             "config_item_name": "Rack Location",
             "format_functions": [[ "apply_string_template", "{{'location': 'R{row}-{rack}/{pdu_letter}', 'description': 'R{row}-{rack}/{pdu_letter}'}}"]],
-            "display_to_user": 1,
+            "display_to_user": true,
             "value_to_display": "R{row}-{rack}/{pdu_letter}",
             "api_calls": [
                 {

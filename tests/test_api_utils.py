@@ -1,6 +1,5 @@
 from unittest import TestCase
 from utils.api_utils import get_ordered_api_calls
-from utils.format_utils import format_red
 
 class TestGetOrderedApiCalls(TestCase):
 

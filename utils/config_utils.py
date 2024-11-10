@@ -5,7 +5,7 @@ from argparse import Namespace
 from utils.dict_utils import get_value_if_key_exists, get_values_if_keys_exist
 from utils.encryption_utils import encrypt, decrypt
 from utils.format_utils import format_red, format_blue, format_bold
-from utils.parse_utils import parse_firmware_url, verify_input, is_exactly_zero, contains_unspecified_defaults
+from utils.parse_utils import parse_firmware_url, verify_input, contains_unspecified_defaults
 from utils.prompt_utils import confirm, enumerate_options, get_input
 from utils.sys_utils import exit_with_code
 from utils.time_utils import get_file_modification_time
@@ -21,11 +21,9 @@ def get_encyrption_passphrase(config: dict, prompts_filename: str) -> str:
     config['passphrase'] = passphrase
     return passphrase
 
-def get_prompt_with_default(config: dict, prompt: dict, encryption_passphrase = '', salt = b'', simulated_user_input: str = '') -> dict:
-    unique_value: bool | int = get_value_if_key_exists(prompt, 'unique_value')
-
-    if not is_exactly_zero(unique_value):
-        return prompt
+def get_prompt_with_default(config: dict, prompt: dict, encryption_passphrase = '', salt: bytes = b'', simulated_user_input: str = '') -> dict:
+    is_unique_value: bool = bool('unique_value' not in prompt.keys() or get_value_if_key_exists(prompt, 'unique_value'))
+    if is_unique_value: return prompt
 
     prompt_input_type: str = get_value_if_key_exists(prompt, 'input_mode')
     input_type: str = prompt_input_type if bool(prompt_input_type) else 'input'
@@ -156,7 +154,7 @@ def get_config(main_file: str, args: Namespace, quiet: bool = True) -> dict:
             "parsed_firmware_url": parsed_firmware_url,
             "interactive_prompts_filename": prompts_filename,
             "config_files_path": config_files_path,
-            "display_greeting": 0 if is_first_run else 1,
+            "display_greeting": False if is_first_run else True,
             "spinner": spinner,
             "api_attempts": config['default_api_attempts'],
             "api_retry_time": config['default_api_retry_time']
