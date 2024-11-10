@@ -5,18 +5,21 @@
 ## Overview
 ### This unofficial script interacts with the the Vertiv™ Geist™ IMD ([Interchangeable Monitoring Device](https://www.vertiv.com/globalassets/products/critical-power/power-distribution/vertiv-geist-rpdu-imd-data-sheet-en.pdf)) API for configuration and firmware upgrades. It is compatible with IMD-03x firmware versions 5 and 6. For API reference, see the [Geist™ API Specification](https://www.vertiv.com/4a5013/globalassets/products/critical-power/power-distribution/geist-api-specification-api-specifications-sl-70874.pdf).
 
+![image](images/imd_script_demo.gif)
+
+
 ## Table of Contents
 
 - [Installation](#installation)
 - [Usage](#usage)
 - [Options](#options)
+- [Dependencies](#dependencies)
 - [API](#api)
 
-![image](images/imd_script_demo.gif)
 
 ## Installation <a name='installation'></a>
 
-Ensure you have [Python v3.12](https://www.python.org/downloads/) or later, [pip3](https://pypi.org/project/pip/), [pipenv](https://pipenv.pypa.io/en/latest/) and [Git](https://git-scm.com/downloads) installed.
+Ensure you have [Python v3.12](https://www.python.org/downloads/) or later, [pip3](https://pypi.org/project/pip/), [pipenv](https://pipenv.pypa.io/en/latest/) and [Git](https://git-scm.com/downloads) installed. See the [Dependencies](#dependencies) section for OS-specific instructions.
 ```shell
 # Clone the repo and cd into its directory:
 
@@ -50,14 +53,20 @@ Ensure you have [Python v3.12](https://www.python.org/downloads/) or later, [pip
 # On subsequent runs, these files will determine the behavior of the script.
 ```
 
+
 ## Usage <a name='usage'></a>
 
 ```shell
+# Ensure that you have a static IP set for the ethernet port you're using to connect to the IMD.
+# This IP should be in the same subnet as the IMD. By default the IMD is assigned 192.168.123.123.
+# Select an IP address in the same subnet (192.168.123.0/24), for example, 192.168.123.100.
+
+
 # By default, the script will run in interactive mode:
     > python3 vg_imd_config/
 
     Welcome to the Vertiv Geist IMD Configuration Script!
-# The script will read prompts from and editable .json file. 
+# The script will read prompts from an editable .json file. 
 # Enter the configuration details for the IMD you're configuring:
     Please enter the rack row (e.g. '7'): 4
     ...
@@ -68,7 +77,7 @@ Ensure you have [Python v3.12](https://www.python.org/downloads/) or later, [pip
         Username and Password: hacker, *******
         ...
         Rack Location: R04-02/B
-# The script will push the configuration in the order specified in the .json file:
+# The script will push the configuration in the order specified in the 'api_call_sequence' section of the prompts .json file:
     ✔ Username and Password set successfully!
     ...
     ✔ Static IP removed successfully!
@@ -77,13 +86,24 @@ Ensure you have [Python v3.12](https://www.python.org/downloads/) or later, [pip
     IMD configuration successful!
     Would you like to configure another IMD? (y or n): 
 
+# By default, the script will check the current IMD firmware and compare it against the target version
+# listed in the config file. If these versions differ, you'll be asked whether you want to perform a
+# firmware upgrade. The script will automatically download the firmware listed in the config file
+# and store it in the 'firmware' directory. It will then be available for subsequent firmware updates.
+# To perform a standalone firmware update, run the script with the -u or --upgrade flags:
+    > python3 vg_imd_config/ -u
+    # or
+    > python3 vg_imd_config/ --upgrade
+# To skip the firmware version check, run the script with the --skip_firmware_check flag:
+    > python3 vg_imd_config/ --skip_firmware_check
 ```
+
 
 ## Options <a name='options'></a>
 
 To see a list of options, run the script with the `--help` flag.
 ```shell
-> python . --help
+(vg_imd_config) > python3 . --help
 usage: Vertiv™ Geist™ IMD Configuration Script [-h] [-a IMD_IP_ADDRESS] [-c CONFIG_FILE] [-f] [-p] [-r] [-u]
 [--prompts_file PROMPTS_FILE] [--reset_script] [--skip_firmware_check] [--spinner SPINNER]
 
@@ -107,6 +127,59 @@ options:
                         Don't check the current IMD firmware version.
   --spinner SPINNER     Set the spinner to use during lengthy script operations (see https://github.com/manrajgrover/halo).
 ```
+
+
+## Dependencies <a name='dependencies'></a>
+### Windows
+Confirm that you have Python v.3.12 or later installed:
+
+    > python3 --version
+    Python 3.12.7
+
+If not, download it from the the official [Python Releases for Windows](https://www.python.org/downloads/windows/) page.
+
+Confirm that you have pip3 installed:
+
+    > pip3 --version
+    pip 24.2 from /usr/lib/python3.12/site-packages/pip (python 3.12)
+
+Use pip to install pipenv
+    
+    > pip3 install pipenv
+
+Confirm that you have Git installed:
+
+    > git --version
+    git version 2.47.0
+
+If not, download it from the the official [Git Download for Windows](https://git-scm.com/downloads/win/) page.
+
+---
+### macOS
+From the terminal, install Homebrew using the following command:
+
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+Add the following line to the bottom of your `~/.profile` file:
+
+    export PATH="/usr/local/opt/python/libexec/bin:$PATH"
+
+Install Python, pipenv, and Git using Homebrew:
+
+    brew install python pipenv git
+
+---
+### Linux
+
+#### Debian, Ubuntu, Linux Mint
+    sudo apt install -y python3 pipenv git
+
+#### CentOS, Fedora, RHEL
+    sudo yum install -y python3 pipenv git
+
+#### Arch, Manjaro
+    sudo pacman -S python3 python-pipenv git
+
 
 ## API <a name='api'></a>
 

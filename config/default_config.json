@@ -6,7 +6,7 @@
     "download_timeout": 10,
     "encryption_iterations": 65536,
     "default_spinner": "arc",
-    "known_bad_firmware_versions": ["5.10.1"],
+    "known_bad_firmware_versions": ["5.10.1", "6.1.1"],
     "firmware_target": "6.1.2",
     "firmware_file_url": "https://www.vertiv.com/49aa2a/globalassets/documents/geist-i03-6_1_2-04302024.zip",
     "hostname_format": {

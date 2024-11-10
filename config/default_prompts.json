@@ -183,18 +183,6 @@
             ]
         },
         {
-            "config_item": "stp",
-            "config_item_name": "STP",
-            "api_calls": [
-                {
-                    "method":   "post",
-                    "api_path": "conf/network/ethernet/stp",
-                    "cmd":      "set",
-                    "data":     {"enabled": "false", "bridgePriority": 24576, "mode": "rstp", "maxHops": 40, "helloTime": 2, "maxAge": 40, "forwardDelay": 21}
-                }
-            ]
-        },
-        {
             "config_item": "dns_1",
             "config_item_name": "DNS 1",
             "api_calls": [
@@ -217,6 +205,18 @@
             ]
         },
         {
+            "config_item": "stp",
+            "config_item_name": "STP",
+            "api_calls": [
+                {
+                    "method":   "post",
+                    "api_path": "conf/network/ethernet/stp",
+                    "cmd":      "set",
+                    "data":     {"enabled": "false", "bridgePriority": 24576, "mode": "rstp", "maxHops": 40, "helloTime": 2, "maxAge": 40, "forwardDelay": 21}
+                }
+            ]
+        },
+        {
             "config_item": "snmp",
             "config_item_name": "SNMP",
             "api_calls": [
@@ -225,6 +225,18 @@
                     "api_path": "conf/snmp",
                     "cmd":      "set",
                     "data":     {"v1v2cEnabled": "false", "v3Enabled": "false"}
+                }
+            ]
+        },
+        {
+            "config_item": "http",
+            "config_item_name": "HTTP",
+            "api_calls": [
+                {
+                    "method":   "post",
+                    "api_path": "conf/http",
+                    "cmd":      "set",
+                    "data":     {"httpEnabled": "true"}
                 }
             ]
         },
@@ -256,12 +268,13 @@
 
     "api_call_sequence": [
         "credentials",
-        "label",
         "ipv6",
-        "stp",
         "dns_1",
         "dns_0",
+        "stp",
+        "label",
         "snmp",
+        "http",
         "ntp",
         "dhcp",
         "location",
