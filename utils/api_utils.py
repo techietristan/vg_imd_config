@@ -193,6 +193,7 @@ def apply_api_call(config: dict, config_item_name: str, api_call: dict, retry_at
     spinner = Halo(spinner = config['spinner'])
     if not quiet: spinner.start(text = status_message)
     try:
+        wait_for_ping(config, quiet = True)
         if bool(raw_data) and method == 'post': 
             if command == 'add': json_data: dict = {'token': '', 'cmd': 'add', 'data': data}
             elif command == 'set': json_data = {'username': config['username'], 'password': config['password'], 'cmd': 'set', 'data': data}
@@ -201,15 +202,22 @@ def apply_api_call(config: dict, config_item_name: str, api_call: dict, retry_at
             request = requests.post(url, headers = headers, json = {'username': config['username'], 'password': config['password'], 'cmd': 'delete'}, verify = False)
         if bool(request):
             response: dict = json.loads(request.text)
-            api_response_message: str = response['retMsg']
-            api_call_successful: bool = bool(response['retCode'] == 0)
+            api_response_message, api_response_code = response['retMsg'], response['retCode']
+            api_call_successful: bool = bool(api_response_code == 0)
             credentials_already_set: bool = api_path == 'auth' and api_response_message == 'Not enough permissions'
-            config_item_already_deleted: bool = api_response_message == 'Path not found' and command == 'delete'
+            config_item_already_deleted: bool = api_response_code == 3001 and command == 'delete'
+            
             if api_call_successful or credentials_already_set or config_item_already_deleted:
                 if not quiet and bool(success_message): spinner.succeed(text = success_message)
                 return True
+            if api_response_code == 1001:
+                time.sleep(2)
+                return retry(retry_attempts, spinner, 'Temporary authorization failure, please wait.')
+            if api_response_code == 5002:
+                time.sleep(2)
+                return retry(retry_attempts, spinner, 'IMD is busy, please wait.')
             else:
-                return retry(retry_attempts, spinner, f'{failure_message} | IMD Error: {api_response_message}.')
+                return retry(retry_attempts, spinner, f'{failure_message} | Response Code: {api_response_code}, IMD Error: {api_response_message}.')
                 return False 
     except requests.exceptions.ConnectionError as error:
         return retry(retry_attempts, spinner, f'Error while interacting with IMD: \'{error}\'')

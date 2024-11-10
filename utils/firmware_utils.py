@@ -100,7 +100,7 @@ def get_firmware_version(config: dict, quiet: bool = False) -> str | bool:
 
 def wait_for_firmware_upgrade(config: dict, target_firmware_version: str | bool, wait_time_in_seconds: int = 10) -> bool:
     current_firmware_version: str | bool = get_firmware_version(config, True)
-    if not current_firmware_version != target_firmware_version:
+    if current_firmware_version != target_firmware_version:
         time.sleep(wait_time_in_seconds)
         return wait_for_firmware_upgrade(config, target_firmware_version, wait_time_in_seconds)
     return True
@@ -119,7 +119,7 @@ def upgrade_imd_firmware(config: dict, target_firmware_version: str | bool, firm
                 files = { 'firmware_file': file_bytes },
                 verify = False)
             if not quiet: spinner.succeed('Firmware file uploaded successfully, please wait while the IMD restarts.')
-            time.sleep(140)
+            time.sleep(60)
             wait_for_firmware_upgrade(config, target_firmware_version, 10)
             return True
     except Exception as firmware_upgrade_error:
