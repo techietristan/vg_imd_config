@@ -1,5 +1,5 @@
 import functools, os, requests, shutil, sys, time
-from halo import Halo #type: ignore[import-untyped]
+from utils.spinner_utils import Spinner 
 from tqdm.auto import tqdm
 
 from utils.api_utils import login_to_imd
@@ -66,7 +66,7 @@ def get_firmware_file_path(config: dict) -> tuple[str, str] | tuple[bool, bool]:
     return firmware_file_path, firmware_filename
 
 def get_firmware_version(config: dict, quiet: bool = False) -> str | bool:
-    spinner: Halo = Halo(text = 'Checking current IMD firmware version...\n', spinner = config['spinner'])
+    spinner: Spinner = Spinner(text = 'Checking current IMD firmware version...\n', spinner = config['spinner'])
     api_url: str = config['api_base_url']
     api_firmware_url: str= f'{api_url}sys/version'
     headers: dict = config['headers']
@@ -83,7 +83,7 @@ def get_firmware_version(config: dict, quiet: bool = False) -> str | bool:
                     spinner.succeed(f'\nCurrent IMD Firmware Version: {format_blue(firmware_version)}')
                 return firmware_version
             else:
-                if not quiet: spinner.fail(firmware_response)
+                if not quiet: spinner.fail(str(firmware_response))
                 raise Exception(firmware_response)
         else: 
             if not quiet: 
@@ -108,7 +108,7 @@ def wait_for_firmware_upgrade(config: dict, target_firmware_version: str | bool,
 def upgrade_imd_firmware(config: dict, target_firmware_version: str | bool, firmware_file_path: str | bool, token: str | bool, quiet: bool = False) -> bool:
     firmware_upgrade_api_endpoint: str = f'https://{config['current_imd_ip']}/transfer/firmware?token={token}'
     firmware_upgrade_headers: dict = {'Content_Type' : 'multipart/form-data'}
-    spinner: Halo = Halo(text = f'Uploading Firmware v.{format_blue(target_firmware_version)}\n', spinner = config['spinner']) #type: ignore[arg-type]
+    spinner: Spinner = Spinner(text = f'Uploading Firmware v.{format_blue(target_firmware_version)}\n', spinner = config['spinner']) #type: ignore[arg-type]
 
     try:
         if not quiet: spinner.start()
