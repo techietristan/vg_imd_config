@@ -33,7 +33,6 @@ def format_bold(text: str) -> str:
 def clear_line() -> None:
     sys.stdout.write('\x1b[2K')
 
-
 def apply_formatting_function(config: dict, format_function: list, current_formatting: str = '', config_items: list[dict] = [{}]) -> str:
     if bool(format_function):
         match format_function[0]:
@@ -43,6 +42,9 @@ def apply_formatting_function(config: dict, format_function: list, current_forma
                 return current_formatting.lower()
             case 'upper':
                 return current_formatting.upper()
+            case 'replace':
+                existing_char, target_char = format_function[1], format_function[2]
+                return current_formatting.replace(existing_char, target_char)
             case 'apply_string_template':
                 if bool(config_items):
                     config_values: dict = { item['config_item'] : get_value_if_key_exists(item, 'value') for item in config_items }

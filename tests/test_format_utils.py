@@ -137,7 +137,11 @@ class TestFormatUserInput(TestCase):
     def test_format_user_input_lower_zfill(self):
         test_prompt = {'format_functions': [['lower'], ['zfill', 6]], 'empty_allowed': False}
         formatted_user_input = format_user_input({}, test_prompt, ' ABC')
-        self.assertEqual(formatted_user_input, '000abc')  
+        self.assertEqual(formatted_user_input, '000abc')
+    def test_format_user_input_replace(self):
+        test_prompt = {'format_functions': [['replace', '_', '-']], 'empty_allowed': False}
+        formatted_user_input = format_user_input({}, test_prompt, 'hostname_with_underscores')
+        self.assertEqual(formatted_user_input, 'hostname-with-underscores')    
 
 
 class TestGetFormattedConfigItems(TestCase):
