@@ -54,8 +54,9 @@ def apply_formatting_function(config: dict, format_function: list, current_forma
 
 def apply_formatting_functions(config: dict, format_functions: list[list], next_formatting: str = '', config_items: list[dict] = [{}], iteration = 0) -> str:
     number_of_format_functions: int = len(format_functions)
+    is_final_formatting_function = bool(iteration + 1 == number_of_format_functions)
     try:
-        if iteration + 1 == number_of_format_functions:
+        if is_final_formatting_function:
             return apply_formatting_function(config, format_functions[iteration], next_formatting, config_items)
         else:
             next_formatting = apply_formatting_function(config, format_functions[iteration], next_formatting, config_items)

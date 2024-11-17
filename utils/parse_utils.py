@@ -75,25 +75,24 @@ def guess_next_hostname(config: dict, hostname: str) -> str | None:
 def parse_firmware_url(config: dict, url: str) -> dict | bool:
     if type(url) is not str or not validators.url(url):
         return False
-    try:
-        url_components: list = url.split('/')
-        url_path: str = f'{'/'.join(url_components[0:-1])}/'
-        filename: str = url_components[-1]
-        bare_filename: str = '.'.join(filename.split('.')[0:-1])
-        firmware_filename: str = f'{'-'.join(bare_filename.split('-')[0:-1])}.firmware'
-        extension: str = url_components[-1].split('.')[-1]
+    
+    url_components: list = url.split('/')
+    url_path: str = f'{'/'.join(url_components[0:-1])}/'
+    filename: str = url_components[-1]
+    bare_filename: str = '.'.join(filename.split('.')[0:-1])
+    firmware_filename: str = f'{'-'.join(bare_filename.split('-')[0:-1])}.firmware'
+    extension: str = url_components[-1].split('.')[-1]
 
-        parsed_url: dict = {
-            'url': url,
-            'url_path': url_path,
-            'filename': filename,
-            'firmware_filename': firmware_filename,
-            'bare_filename': bare_filename,
-            'extension': extension
-        }
-        return parsed_url
-    except (IndexError, TypeError):
-        return False
+    parsed_url: dict = {
+        'url': url,
+        'url_path': url_path,
+        'filename': filename,
+        'firmware_filename': firmware_filename,
+        'bare_filename': bare_filename,
+        'extension': extension
+    }
+    
+    return parsed_url
 
 def run_verify_function(config: dict, user_input: str, verify_function: list) -> bool:
     stripped_user_input = user_input.strip()

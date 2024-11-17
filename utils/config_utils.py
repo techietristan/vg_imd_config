@@ -106,7 +106,7 @@ def get_filename(file_type:str, config_files_path: str, quiet = False) -> str | 
         if number_of_configs == 1:
             if not quiet:
                 print(f'One {file_type} file found: \'{format_blue(config_filenames[0])}\'')
-            config_filename:str | bool | None = config_filenames[0]
+            config_filename: str | bool | None = config_filenames[0]
         if number_of_configs > 1:
             prompt: str = f'Please select a {file_type} file to load:'
             config_filename = enumerate_options(config = {}, options = config_filenames, prompt = prompt)

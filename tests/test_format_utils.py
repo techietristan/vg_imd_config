@@ -103,11 +103,21 @@ class TestApplyFormattingFunctions(TestCase):
         format_functions: list[list] = test_string_formatter['format_functions']
         formatted_string = apply_formatting_functions({}, format_functions, '', test_string_parsed_promts)
         self.assertEqual(expected_formatted_string, formatted_string)
+    
+    def test_apply_format_functions_returns_current_formatting_if_invalid_iteration(self):
+        expected_formatted_string: str = ""
+        format_functions: list[list] = [['test']]
+        formatted_string = apply_formatting_functions({}, format_functions, '', [{}], 3)
+        self.assertEqual(expected_formatted_string, formatted_string)
 
 
 class TestFormatUserInput(TestCase):
     def test_format_user_input_none(self):
         test_prompt = {'format_functions': [[]], 'empty_allowed': False}
+        formatted_user_input = format_user_input({}, test_prompt, 'test_input ')
+        self.assertEqual(formatted_user_input, 'test_input')
+    def test_format_user_input_format_functions_missing(self):
+        test_prompt = {'empty_allowed': False}
         formatted_user_input = format_user_input({}, test_prompt, 'test_input ')
         self.assertEqual(formatted_user_input, 'test_input')
     def test_format_user_input_zfill(self):

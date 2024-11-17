@@ -1,6 +1,8 @@
 import argparse
 
-def parse_args(system_arguments: list[str]):
+from argparse import Namespace
+
+def parse_args(system_arguments: list[str]) -> Namespace:
     parser = argparse.ArgumentParser(
         prog = 'Vertiv™ Geist™ IMD Configuration Script',
         description = 'Unofficial script for configuring and upgrading Vertiv™ Geist™ IMDs'

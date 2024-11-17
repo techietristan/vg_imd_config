@@ -170,7 +170,6 @@ class TestParseFirmwareUrl(TestCase):
     invalid_url_type: list = []
     unparseable_url: str = 'https://some.unparsable.url/cant/parse/this'
 
-
     def test_parse_firmware_url_valid(self):
         self.assertEqual(parse_firmware_url({}, self.good_url['url']), self.good_url)
     
@@ -347,6 +346,8 @@ class TestVerifyInput(TestCase):
             self.assertTrue(verify_input({}, self.no_verify_function_params_empty_not_allowed, valid_result))
         self.assertFalse(verify_input({}, self.no_verify_function_params_empty_not_allowed, invalid_result))
 
+    def test_verify_input_missing_verify_function_returns_false(self):
+        self.assertFalse(verify_input({}, {'verify_functions': [['none']], 'empty_allowed': False}, 'test_input'))
 
 
 class TestContainsUnspecifiedDefault(TestCase):
