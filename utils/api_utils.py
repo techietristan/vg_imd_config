@@ -1,5 +1,5 @@
 import json, requests, time, urllib3
-from utils.spinner_utils import Spinner
+from halo import Halo # type: ignore
 from requests import Response
 
 from utils.dict_utils import get_dict_with_matching_key_value_pair, get_values_if_keys_exist
@@ -22,7 +22,7 @@ def make_api_call(
     function_name: str = '',
     quiet: bool = False) -> Response | bool:
 
-    spinner = Spinner(text = f'{status_msg}\n', spinner = config['spinner'])
+    spinner = Halo(text = f'{status_msg}\n', spinner = config['spinner'])
     try:
         if not quiet: spinner.start()
         match action:
@@ -169,7 +169,7 @@ def get_ordered_api_calls(config: dict, prompts: dict, unique_config_items: list
     return ordered_api_calls
 
 def apply_api_call(config: dict, config_item_name: str, api_call: dict, retry_attempts: int, quiet=False) -> bool:
-    def retry(retry_attempts: int, spinner: Spinner, message: str) -> bool:
+    def retry(retry_attempts: int, spinner: Halo, message: str) -> bool:
         if not quiet: spinner.fail(format_red(message))
         auto_retry: bool = retry_attempts > 0
         retry_wait_time: int = config['api_retry_time'] 
@@ -190,7 +190,7 @@ def apply_api_call(config: dict, config_item_name: str, api_call: dict, retry_at
     api_attempts, default_api_retry_time, headers = get_values_if_keys_exist(config, ['default_api_attempts', 'default_api_retry_time', 'headers'])
     url = f'{config['api_base_url']}{api_path}' if api_path[0] != '/' else f'{config['imd_base_url']}{api_path}'
     status_message, success_message, failure_message = get_status_messages(config, config_item_name, command)
-    spinner = Spinner(spinner = config['spinner'])
+    spinner = Halo(spinner = config['spinner'])
     if not quiet: spinner.start(text = status_message)
     try:
         wait_for_ping(config, quiet = True)
