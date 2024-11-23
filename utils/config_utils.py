@@ -1,4 +1,4 @@
-import json, os, shutil
+import json, os, shutil, sys
 
 from argparse import Namespace
 
@@ -122,6 +122,14 @@ def get_filename(file_type:str, config_files_path: str, quiet = False) -> str | 
 
     return config_filename
 
+def get_spinner(config: dict, args: Namespace) -> str:
+    specified_spinner: str | None = args.spinner
+    spinner: str = specified_spinner if bool(specified_spinner) and specified_spinner in spinners else config['default_spinner']
+    unicode_supported: bool = bool(sys.stdout.encoding.lower().startswith('utf'))
+    if not unicode_supported:
+        return 'line'
+    return spinner
+
 def get_config(main_file: str, args: Namespace, quiet: bool = True) -> dict:
     script_path: str = os.path.dirname(main_file)
     config_files_path: str = os.path.join(script_path, 'config')
@@ -139,15 +147,14 @@ def get_config(main_file: str, args: Namespace, quiet: bool = True) -> dict:
         exit_with_code(1)
 
     with open(json_file_path) as config_file:
-        config: dict = json.load(config_file)
+        initial_config: dict = json.load(config_file)
         
         imd_ip: str | None = args.imd_ip_address
-        current_imd_ip: str | None = config['default_imd_ip'] if imd_ip == None else imd_ip
-        specified_spinner: str | None = args.spinner
-        spinner: str = specified_spinner if bool(specified_spinner) and specified_spinner in spinners else config['default_spinner']
-        parsed_firmware_url: dict | bool = parse_firmware_url(config, config['firmware_file_url'])
+        current_imd_ip: str | None = initial_config['default_imd_ip'] if imd_ip == None else imd_ip
+        spinner: str = get_spinner(initial_config, args)
+        parsed_firmware_url: dict | bool = parse_firmware_url(initial_config, initial_config['firmware_file_url'])
 
-        finished_config = {**config, 
+        finished_config = {**initial_config, 
             "current_imd_ip": current_imd_ip,
             "imd_base_url": f'https://{current_imd_ip}',
             "api_base_url": f'https://{current_imd_ip}/api/',
@@ -156,8 +163,8 @@ def get_config(main_file: str, args: Namespace, quiet: bool = True) -> dict:
             "config_files_path": config_files_path,
             "display_greeting": False if is_first_run else True,
             "spinner": spinner,
-            "api_attempts": config['default_api_attempts'],
-            "api_retry_time": config['default_api_retry_time']
+            "api_attempts": initial_config['default_api_attempts'],
+            "api_retry_time": initial_config['default_api_retry_time']
             }
 
         return finished_config

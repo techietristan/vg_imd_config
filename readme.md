@@ -14,43 +14,68 @@
 - [Usage](#usage)
 - [Options](#options)
 - [Dependencies](#dependencies)
+- [Updates](#updates)
 - [API](#api)
 
 
 ## Installation <a name='installation'></a>
 
-Ensure you have [Python v3.12](https://www.python.org/downloads/) or later, [pip3](https://pypi.org/project/pip/), [pipenv](https://pipenv.pypa.io/en/latest/) and [Git](https://git-scm.com/downloads) installed. See the [Dependencies](#dependencies) section for OS-specific instructions.
+Ensure you have **Python** v3.12 or later, **pip3**, **pipenv** and **Git** installed. See the [Dependencies](#dependencies) section for OS-specific instructions.
+
+### Installing Script Dependencies
 ```shell
 # Clone the repo and cd into its directory:
 
     > git clone https://github.com/techietristan/vg_imd_config.git
     > cd vg_imd_config
 
-# Install dependencies with pipenv.
+# Install dependencies with pipenv:
 
-    # Option 1: To install the dependencies globally, use pipenv install --system:
-    > pipenv install --system
-    ...
-    Installing dependencies from Pipfile.lock (5169c0)...
-    All dependencies are now up-to-date!
-        # Run the script using Python.
-        > python3 .
-
-    # Option 2: To run the script in its own environment, use pipenv shell:
+# Option 1: To run the script in its own environment, use pipenv shell:
     > pipenv shell
     Launching subshell in virtual environment...
     ...
     # Install dependencies:
     (vg_imd_config) > pipenv install
-        # After launching the pipenv shell, use python to run the script:
-        (vg_imd_config) > python3 .
-        # Alternately, to run the script without launching the pipenv shell, use pipenv run:
-        > pipenv run pipenv install
-        > pipenv run python3 .
 
-# On first run, the script will create copes of the default config and prompts .json files. 
-# These copies can be edited to suit your needs. 
-# On subsequent runs, these files will determine the behavior of the script.
+    # After launching the pipenv shell, use python to run the script:
+    (vg_imd_config) > python3 .
+
+# Option 2: to run the script without launching the pipenv shell, use pipenv run:
+    > pipenv run pipenv install
+    > pipenv run python3 .
+
+# Option 3: To install the dependencies globally, use pipenv install --system:
+    > pipenv install --system
+    ...
+    Installing dependencies from Pipfile.lock (5169c0)...
+    All dependencies are now up-to-date!
+
+    # Run the script using Python.
+    > python3 .
+```
+### First Run
+```shell
+# On first run, the script will prompt you to create copies of the default config and prompts .json files:
+
+    Welcome to the Vertiv Geist IMD Configuration Script!
+
+    No config files found. Do you want to make a copy of the default config file 'default_config.json'? ('y' or 'n'): y
+    Copied 'default_config.json' to 'config.json'.
+    No prompts files found. Do you want to make a copy of the default prompts file 'default_prompts.json'? ('y' or 'n'): y
+    Copied 'default_prompts.json' to 'prompts.json'.
+
+# These copied files can be edited to suit your needs. On subsequent runs, they will determine the behavior of the script.
+# The script will prompt you to set default values for the prompts file:
+
+    Do you want to set defaults for 'prompts.json'? y
+    Encrypted defaults found in 'prompts.json'. Please set a passphrase for encrypting and decrypting these values.
+    Please enter the encryption passphrase:
+    ...
+    Please enter the default password again: 
+    Defaults written to 'prompts.json'!
+
+# Once these values have been saved, setup is complete and the script will proceed to prompt you for the unique configuration for the next IMD to be configured.
 ```
 
 
@@ -130,6 +155,7 @@ options:
 
 
 ## Dependencies <a name='dependencies'></a>
+Ensure you have [Python v3.12](https://www.python.org/downloads/) or later, [pip3](https://pypi.org/project/pip/), [pipenv](https://pipenv.pypa.io/en/latest/) and [Git](https://git-scm.com/downloads) installed:
 ### Windows
 Confirm that you have Python v.3.12 or later installed:
 
@@ -180,6 +206,11 @@ Install Python, pipenv, and Git using Homebrew:
 #### Arch, Manjaro
     sudo pacman -S python3 python-pipenv git
 
+## Updates <a name='updates'></a>
+To update the script, cd into its directory pull the latest commit from the main branch:
+
+    cd vg_imd_config
+    git pull origin main
 
 ## API <a name='api'></a>
 

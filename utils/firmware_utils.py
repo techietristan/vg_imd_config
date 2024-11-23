@@ -45,7 +45,7 @@ def get_firmware_file_path(config: dict) -> tuple[str, str] | tuple[bool, bool]:
     firmware_download_destination: str = f'{firmware_dir_path}{firmware_zip_filename}'
 
     if not firmware_zip_file_exists and not firmware_file_exists and confirm(config = config, 
-    confirm_prompt = 'Firmware file not found. Download and extract firmware from the Virtiv website? '):
+    confirm_prompt = 'Firmware file not found. Download and extract firmware from the Vertiv website? '):
         try:
             download_and_extract_firmware(config = config, firmware_download_destination = firmware_download_destination, firmware_dir_path = firmware_dir_path)
         except Exception as download_error:
