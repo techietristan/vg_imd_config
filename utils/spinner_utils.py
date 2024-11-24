@@ -5,7 +5,7 @@
 # The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-import json, sys
+import json, random, sys
 
 from os import path
 
@@ -23,8 +23,14 @@ def get_spinner(config: dict) -> dict:
     spinners = get_spinners_from_json_file('spinners.json')
     unicode_is_supported: bool = bool(sys.stdout.encoding.lower().startswith('utf'))
     selected_spinner_name: str | bool = get_value_if_key_exists(config, 'spinner')
-    valid_spinner_names: list[str] = [ spinner_name for spinner_name in spinners.keys() ]
+    valid_spinner_names: list[str] = [ spinner_name for spinner_name in spinners.keys() ] + ['random']
     selected_spinner_is_valid: bool = bool(selected_spinner_name in valid_spinner_names and unicode_is_supported)
-    spinner_name: str | bool = selected_spinner_name if selected_spinner_is_valid  else 'line'
+
+    if selected_spinner_name == 'random' and unicode_is_supported:
+        spinner_name: str | bool = random.choice(valid_spinner_names)
+    elif selected_spinner_is_valid:
+        spinner_name = selected_spinner_name
+    else:
+        spinner_name = 'line'
 
     return spinners[spinner_name]

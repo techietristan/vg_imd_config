@@ -1,4 +1,4 @@
-import json, os, shutil, sys
+import json, os, shutil
 
 from argparse import Namespace
 
