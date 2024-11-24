@@ -1,4 +1,4 @@
-import sys
+import os, sys
 
 from utils.dict_utils import get_value_if_key_exists
 
@@ -106,3 +106,13 @@ def get_status_messages(config: dict, config_item_name: str, command: str) -> tu
     failure_message: str =  f'Failed to set {format_red(config_item_name)}!'        if command_adds else f'Failed to remove {format_red(config_item_name)}!'        if command_removes else ''
 
     return status_message, success_message, failure_message
+
+def truncate_message(message: str, truncation_marker: str = '...') -> str:
+    terminal_width: int = os.get_terminal_size().columns
+    message_width: int = len(message)
+    truncation_marker_width: int = len(truncation_marker)
+    max_message_width: int = terminal_width - truncation_marker_width - 1
+    if message_width > max_message_width:
+        return f'{message[:max_message_width]}{truncation_marker}'
+
+    return message

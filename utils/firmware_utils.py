@@ -4,7 +4,7 @@ from tqdm.auto import tqdm
 
 from utils.api_utils import login_to_imd
 from utils.dict_utils import get_value_if_key_exists
-from utils.format_utils import format_blue, format_red
+from utils.format_utils import format_blue, format_red, truncate_message
 from utils.network_utils import wait_for_ping
 from utils.parse_utils import is_vaild_firmware_version
 from utils.prompt_utils import confirm, get_credentials
@@ -84,7 +84,7 @@ def get_firmware_version(config: dict, quiet: bool = False) -> str | bool:
                     spinner.succeed(f'\nCurrent IMD Firmware Version: {format_blue(firmware_version)}')
                 return firmware_version
             else:
-                if not quiet: spinner.fail(firmware_response)
+                if not quiet: spinner.fail(truncate_message(firmware_response))
                 raise Exception(firmware_response)
         else: 
             if not quiet: 
@@ -94,7 +94,7 @@ def get_firmware_version(config: dict, quiet: bool = False) -> str | bool:
 
     except Exception as error:
         if not quiet: 
-            spinner.fail(f'Unable to get IMD firmware version: {error}')
+            spinner.fail(truncate_message(f'Unable to get IMD firmware version: {error}'))
             if confirm(config, confirm_prompt = 'Do you want to try again?: '):
                 return get_firmware_version(config = config, quiet = quiet)
     return False
@@ -124,7 +124,7 @@ def upgrade_imd_firmware(config: dict, target_firmware_version: str | bool, firm
             wait_for_firmware_upgrade(config, target_firmware_version, 10)
             return True
     except Exception as firmware_upgrade_error:
-        if not quiet: spinner.fail(f'\n Error upgrading firmware: {firmware_upgrade_error}')
+        if not quiet: spinner.fail(truncate_message(f'\n Error upgrading firmware: {firmware_upgrade_error}'))
         if not confirm(config, '\nDo you want to try again (y or n): '): 
             return True
         upgrade_imd_firmware(config, target_firmware_version, firmware_file_path, token)

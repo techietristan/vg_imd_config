@@ -3,7 +3,7 @@ from halo import Halo # type: ignore
 from requests import Response
 
 from utils.dict_utils import get_dict_with_matching_key_value_pair, get_values_if_keys_exist
-from utils.format_utils import format_red, format_yellow, get_formatted_config_items, get_status_messages
+from utils.format_utils import format_red, format_yellow, get_formatted_config_items, get_status_messages, truncate_message
 from utils.parse_utils import is_exactly_zero
 from utils.prompt_utils import confirm, get_credentials
 from utils.network_utils import wait_for_ping
@@ -38,17 +38,17 @@ def make_api_call(
         else:
             response_message: str = response['retMsg']
             failure_message: str = response_message if bool(response_message) else f'Return Code: {response_code}' if bool(response_code) else response
-            if not quiet: spinner.fail(f'IMD Error: {failure_message}.')
+            if not quiet: spinner.fail(truncate_message(f'IMD Error: {failure_message}.'))
         return response
     except requests.exceptions.ConnectionError as error:
         if not quiet: 
-            spinner.fail(f'Error while interacting with IMD: {error}.')
+            spinner.fail(truncate_message(f'Error while interacting with IMD: {error}.'))
             if not confirm(config, 'Do you want to try again? (y or n): '):
                 if not confirm(config, 'Do you want to continue with the configuration? (y or n): '):
                     exit_with_code(1)
             else: make_api_call(config, url, headers, json_payload, action, status_msg, success_msg, function_name, quiet)
     except Exception as error:
-        if not quiet: spinner.fail(f'Function \'{function_name}\' error: \'{error}\'')
+        if not quiet: spinner.fail(truncate_message(f'Function \'{function_name}\' error: \'{error}\''))
         
     return False
 
@@ -171,7 +171,7 @@ def get_ordered_api_calls(config: dict, prompts: dict, unique_config_items: list
 
 def apply_api_call(config: dict, config_item_name: str, api_call: dict, retry_attempts: int, quiet=False) -> bool:
     def retry(retry_attempts: int, spinner: Halo, message: str) -> bool:
-        if not quiet: spinner.fail(format_red(message))
+        if not quiet: spinner.fail(truncate_message(format_red(message)))
         auto_retry: bool = retry_attempts > 0
         retry_wait_time: int = config['api_retry_time'] 
         if auto_retry:
