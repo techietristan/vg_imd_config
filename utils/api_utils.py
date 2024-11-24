@@ -191,7 +191,7 @@ def apply_api_call(config: dict, config_item_name: str, api_call: dict, retry_at
     api_attempts, default_api_retry_time, headers = get_values_if_keys_exist(config, ['default_api_attempts', 'default_api_retry_time', 'headers'])
     url = f'{config['api_base_url']}{api_path}' if api_path[0] != '/' else f'{config['imd_base_url']}{api_path}'
     status_message, success_message, failure_message = get_status_messages(config, config_item_name, command)
-    spinner = Halo(spinner = config['spinner'])
+    spinner = Halo(spinner = get_spinner(config))
     if not quiet: spinner.start(text = status_message)
     try:
         wait_for_ping(config, quiet = True)

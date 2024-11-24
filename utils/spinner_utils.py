@@ -14,7 +14,7 @@ from utils.dict_utils import get_value_if_key_exists
 def get_spinners_from_json_file(spinners_json_filename: str = 'spinners.json') -> dict:
     utils_dir_path: str = path.abspath(path.dirname(__file__))
     spinners_file_path: str =  path.join(utils_dir_path, 'spinners.json')
-    with open (spinners_file_path, 'r') as spinners_json:
+    with open (spinners_file_path, 'r', encoding = 'utf-8') as spinners_json:
         spinners: dict = json.load(spinners_json)
 
     return spinners
