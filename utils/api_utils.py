@@ -7,6 +7,7 @@ from utils.format_utils import format_red, format_yellow, get_formatted_config_i
 from utils.parse_utils import is_exactly_zero
 from utils.prompt_utils import confirm, get_credentials
 from utils.network_utils import wait_for_ping
+from utils.spinner_utils import get_spinner
 from utils.sys_utils import exit_with_code
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -22,7 +23,7 @@ def make_api_call(
     function_name: str = '',
     quiet: bool = False) -> Response | bool:
 
-    spinner = Halo(text = f'{status_msg}\n', spinner = config['spinner'])
+    spinner = Halo(text = f'{status_msg}\n', spinner = get_spinner(config))
     try:
         if not quiet: spinner.start()
         match action:

@@ -10,8 +10,6 @@ from utils.prompt_utils import confirm, enumerate_options, get_input
 from utils.sys_utils import exit_with_code
 from utils.time_utils import get_file_modification_time
 
-spinners: list[str] = ['dots', 'dots2', 'dots3', 'dots4', 'dots5', 'dots6', 'dots7', 'dots8', 'dots9', 'dots10', 'dots11', 'dots12', 'line', 'line2', 'pipe', 'simpleDots', 'simpleDotsScrolling', 'star', 'star2', 'flip', 'hamburger', 'growVertical', 'growHorizontal', 'balloon', 'balloon2', 'noise', 'bounce', 'boxBounce', 'boxBounce2', 'triangle', 'arc', 'circle', 'squareCorners', 'circleQuarters', 'circleHalves', 'squish', 'toggle', 'toggle2', 'toggle3', 'toggle4', 'toggle5', 'toggle6', 'toggle7', 'toggle8', 'toggle9', 'toggle10', 'toggle11', 'toggle12', 'toggle13', 'arrow', 'arrow2', 'arrow3', 'bouncingBar', 'bouncingBall', 'smiley', 'monkey', 'hearts', 'clock', 'earth', 'moon', 'runner', 'pong', 'shark', 'dqpb']
-
 def get_encyrption_passphrase(config: dict, prompts_filename: str) -> str:
     print(f'Encrypted defaults found in \'{format_blue(prompts_filename)}\'. Please set a passphrase for encrypting and decrypting these values.')
     passphrase: str = get_input(
@@ -122,14 +120,6 @@ def get_filename(file_type:str, config_files_path: str, quiet = False) -> str | 
 
     return config_filename
 
-def get_spinner(config: dict, args: Namespace) -> str:
-    specified_spinner: str | None = args.spinner
-    spinner: str = specified_spinner if bool(specified_spinner) and specified_spinner in spinners else config['default_spinner']
-    unicode_supported: bool = bool(sys.stdout.encoding.lower().startswith('utf'))
-    if not unicode_supported:
-        return 'line'
-    return spinner
-
 def get_config(main_file: str, args: Namespace, quiet: bool = True) -> dict:
     script_path: str = os.path.dirname(main_file)
     config_files_path: str = os.path.join(script_path, 'config')
@@ -151,7 +141,7 @@ def get_config(main_file: str, args: Namespace, quiet: bool = True) -> dict:
         
         imd_ip: str | None = args.imd_ip_address
         current_imd_ip: str | None = initial_config['default_imd_ip'] if imd_ip == None else imd_ip
-        spinner: str = get_spinner(initial_config, args)
+        spinner: str = args.spinner if bool(args.spinner) else 'arc'
         parsed_firmware_url: dict | bool = parse_firmware_url(initial_config, initial_config['firmware_file_url'])
 
         finished_config = {**initial_config, 

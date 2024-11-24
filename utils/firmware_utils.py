@@ -8,6 +8,7 @@ from utils.format_utils import format_blue, format_red
 from utils.network_utils import wait_for_ping
 from utils.parse_utils import is_vaild_firmware_version
 from utils.prompt_utils import confirm, get_credentials
+from utils.spinner_utils import get_spinner
 
 def download_and_extract_firmware(config: dict, firmware_download_destination: str, firmware_dir_path) -> bool:
     firmware_download_url: str = config['firmware_file_url']
@@ -66,7 +67,7 @@ def get_firmware_file_path(config: dict) -> tuple[str, str] | tuple[bool, bool]:
     return firmware_file_path, firmware_filename
 
 def get_firmware_version(config: dict, quiet: bool = False) -> str | bool:
-    spinner: Halo = Halo(text = 'Checking current IMD firmware version...\n', spinner = config['spinner'])
+    spinner: Halo = Halo(text = 'Checking current IMD firmware version...\n', spinner = get_spinner(config))
     api_url: str = config['api_base_url']
     api_firmware_url: str= f'{api_url}sys/version'
     headers: dict = config['headers']
@@ -108,7 +109,7 @@ def wait_for_firmware_upgrade(config: dict, target_firmware_version: str | bool,
 def upgrade_imd_firmware(config: dict, target_firmware_version: str | bool, firmware_file_path: str | bool, token: str | bool, quiet: bool = False) -> bool:
     firmware_upgrade_api_endpoint: str = f'https://{config['current_imd_ip']}/transfer/firmware?token={token}'
     firmware_upgrade_headers: dict = {'Content_Type' : 'multipart/form-data'}
-    spinner: Halo = Halo(text = f'Uploading Firmware v.{format_blue(target_firmware_version)}\n', spinner = config['spinner']) #type: ignore[arg-type]
+    spinner: Halo = Halo(text = f'Uploading Firmware v.{format_blue(target_firmware_version)}\n', spinner = get_spinner(config)) #type: ignore[arg-type]
 
     try:
         if not quiet: spinner.start()
