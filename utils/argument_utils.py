@@ -18,7 +18,7 @@ def parse_args(system_arguments: list[str]) -> Namespace:
     parser.add_argument('--prompts_file',           help='Specify the interactive prompts file to use.')
     parser.add_argument('--reset_script',           help='Remove all customized config and prompts files leaving only the default templates for these files.', action='store_true')
     parser.add_argument('--skip_firmware_check',    help='Don\'t check the current IMD firmware version.', action = 'store_true')
-    parser.add_argument('--spinner',                help='Set the spinner to use during lengthy script operations (see https://github.com/manrajgrover/halo).')
+    parser.add_argument('--spinner',                help='Set the spinner to use during lengthy script operations (see https://github.com/sindresorhus/cli-spinners).')
     
 
     return parser.parse_args()

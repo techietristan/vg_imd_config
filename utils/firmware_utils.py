@@ -77,6 +77,7 @@ def get_firmware_version(config: dict, quiet: bool = False) -> str | bool:
         if wait_for_ping(config, quiet = True):
             firmware_response: dict = requests.get(api_firmware_url, headers = headers, verify = False).json()
             response_code: int = firmware_response['retCode']
+            response_message: str = firmware_response['retMsg']
             firmware_version: str = firmware_response['data']
             if response_code == 0 and is_vaild_firmware_version(config = config, firmware_version = firmware_version):
                 if not quiet:
@@ -84,7 +85,7 @@ def get_firmware_version(config: dict, quiet: bool = False) -> str | bool:
                     spinner.succeed(f'\nCurrent IMD Firmware Version: {format_blue(firmware_version)}')
                 return firmware_version
             else:
-                if not quiet: spinner.fail(truncate_message(firmware_response))
+                if not quiet: spinner.fail(truncate_message(response_message))
                 raise Exception(firmware_response)
         else: 
             if not quiet: 

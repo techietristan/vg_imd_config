@@ -229,6 +229,18 @@
             ]
         },
         {
+            "config_item": "ssh",
+            "config_item_name": "SSH",
+            "api_calls": [
+                {
+                    "method":   "post",
+                    "api_path": "conf/ssh",
+                    "cmd":      "set",
+                    "data":     {"enabled": "false"}
+                }
+            ]
+        },
+        {
             "config_item": "http",
             "config_item_name": "HTTP",
             "api_calls": [
@@ -274,6 +286,7 @@
         "stp",
         "label",
         "snmp",
+        "ssh",
         "http",
         "ntp",
         "dhcp",
