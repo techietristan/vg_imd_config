@@ -150,7 +150,9 @@ Confirm that you have Python v.3.12 or later installed:
     > python3 --version
     Python 3.12.7
 
-If not, download it from the the official [Python Releases for Windows](https://www.python.org/downloads/windows/) page.
+If not, download it from the the official [Python Releases for Windows](https://www.python.org/downloads/windows/) page or install it using winget:
+
+    winget install -e --id Python.Python.3.0
 
 Confirm that you have pip3 installed:
 
@@ -166,7 +168,9 @@ Confirm that you have Git installed:
     > git --version
     git version 2.47.0
 
-If not, download it from the the official [Git Download for Windows](https://git-scm.com/downloads/win/) page.
+If not, download it from the the official [Git Download for Windows](https://git-scm.com/downloads/win/) page or install it using winget:
+
+    winget install -e --id Git.Git
 
 ---
 ### macOS
