@@ -28,19 +28,22 @@ Ensure you have **Python** v3.12 or later, **pip3**, **pipenv** and **Git** inst
 
 ### Install dependencies with pipenv:
 #### Option 1: 
-#### To run the script in its own environment, use pipenv shell:
+#### To run the script in its own environment, use pipenv shell.
+#### Install dependencies:
+    > pipenv install
+#### Launch pipenv shell:
     > pipenv shell
     Launching subshell in virtual environment...
     ...
-#### Install dependencies:
-    (vg_imd_config) > pipenv install
 #### From the pipenv shell, use python to run the script:
     (vg_imd_config) > python3 .
 ---
 
 #### Option 2: 
-#### To run the script without launching the pipenv shell, use pipenv run:
-    > pipenv run pipenv install
+#### To run the script without launching the pipenv shell, use pipenv run
+#### Install dependencies:
+    > pipenv install
+#### run python in pipenv:
     > pipenv run python3 .
 ---
 
