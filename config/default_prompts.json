@@ -241,6 +241,18 @@
             ]
         },
         {
+            "config_item": "usb",
+            "config_item_name": "USB",
+            "api_calls": [
+                {
+                    "method":   "post",
+                    "api_path": "conf/usb",
+                    "cmd":      "set",
+                    "data":     {"enabled": "false"}
+                }
+            ]
+        },
+        {
             "config_item": "http",
             "config_item_name": "HTTP",
             "api_calls": [

@@ -1,4 +1,4 @@
-import functools, os, requests, shutil, sys, time
+import functools, os, requests, shutil, sys, time #type: ignore[import-untyped]
 from halo import Halo #type: ignore[import-untyped]
 from tqdm.auto import tqdm
 
