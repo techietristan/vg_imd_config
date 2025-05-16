@@ -299,6 +299,7 @@
         "label",
         "snmp",
         "ssh",
+        "usb",
         "http",
         "ntp",
         "dhcp",
