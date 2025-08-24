@@ -1,4 +1,4 @@
-import json, requests, time, urllib3
+import json, requests, time, urllib3 # type: ignore[import-untyped]
 from halo import Halo # type: ignore
 from requests import Response
 

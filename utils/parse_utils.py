@@ -151,3 +151,17 @@ def has_encrypted_default(prompt: dict) -> bool:
 
 def contains_encrypted_defaults(prompts: list[dict]) -> bool:
     return bool( True in [ has_encrypted_default(prompt) for prompt in prompts ])
+
+def version_is_higher(first_version_number: str, second_version_number: str) -> bool:
+    try:
+        first_version_triplet: tuple[int, ...] = tuple([int(category) for category in first_version_number.split('.')])
+        second_version_triplet: tuple[int, ...] = tuple([int(category) for category in second_version_number.split('.')])
+        for index, category in enumerate(first_version_triplet):
+            if category > second_version_triplet[index]:
+                return True
+            else:
+                if category != second_version_triplet[index]:
+                    return False
+        return False
+    except:
+        return False

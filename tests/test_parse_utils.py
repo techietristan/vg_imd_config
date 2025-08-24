@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from utils.parse_utils import contains_encrypted_defaults, has_encrypted_default, contains_unspecified_default, contains_unspecified_defaults, is_exactly, is_exactly_zero, is_exactly_one, is_boolean_false, is_boolean_true, is_vaild_firmware_version, is_valid_hostname, get_next_in_sequence, guess_next_hostname, parse_firmware_url, verify_input
+from utils.parse_utils import contains_encrypted_defaults, has_encrypted_default, contains_unspecified_default, contains_unspecified_defaults, is_exactly, is_exactly_zero, is_exactly_one, is_boolean_false, is_boolean_true, is_vaild_firmware_version, is_valid_hostname, get_next_in_sequence, guess_next_hostname, parse_firmware_url, verify_input, version_is_higher
 
 test_config: dict = {
     "hostname_format": {
@@ -469,5 +469,24 @@ class TestContainsEncryptedDefaults(TestCase):
     
     def test_contains_no_encrypted_default_salt_default(self):
         self.assertFalse(contains_encrypted_defaults(self.prompts_without_encrypted_values))
+
+
+class TestVersionIsHigher(TestCase):
+    def test_major_higher_returns_true(self):
+        self.assertIs(True, version_is_higher('3.4.5', '2.5.6'))
+        self.assertIs(True, version_is_higher('12.128.169', '2.123.123'))
+    def test_major_lower_returns_false(self):
+        self.assertIs(False, version_is_higher('2.5.6', '3.4.5'))
+        self.assertIs(False, version_is_higher('2.123.123', '12.128.169'))
+    def test_minor_higher_returns_true(self):
+        self.assertIs(True, version_is_higher('2.6.5', '2.5.6'))
+        self.assertIs(True, version_is_higher('234.123.789', '234.12.789'))
+    def test_minor_lower_returns_false(self):
+        self.assertIs(False, version_is_higher('2.5.6', '2.6.5'))
+        self.assertIs(False, version_is_higher('234.12.789', '234.123.789'))
+    def test_returns_false_with_unexpected_input(self):
+        self.assertIs(False, version_is_higher(True, 43))
+        self.assertIs(False, version_is_higher('1.2.3', '1.2.3.4'))
+        self.assertIs(False, version_is_higher('1.2.4-alpha', '1.2.3-beta'))
 
     

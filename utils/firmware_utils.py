@@ -1,12 +1,12 @@
 import functools, os, requests, shutil, sys, time #type: ignore[import-untyped]
 from halo import Halo #type: ignore[import-untyped]
-from tqdm.auto import tqdm
+from tqdm.auto import tqdm #type: ignore[import-untyped]
 
 from utils.api_utils import login_to_imd
 from utils.dict_utils import get_value_if_key_exists
 from utils.format_utils import format_blue, format_red, truncate_message
 from utils.network_utils import wait_for_ping
-from utils.parse_utils import is_vaild_firmware_version
+from utils.parse_utils import is_vaild_firmware_version, version_is_higher
 from utils.prompt_utils import confirm, get_credentials
 from utils.spinner_utils import get_spinner
 
@@ -141,13 +141,15 @@ def prompt_to_upgrade_imd_firmware(config: dict, quiet: bool = True) -> bool:
     if current_firmware_version == target_firmware_version and type(current_firmware_version) == str:
         if not quiet: print(f'IMD firmware up to date (v.{format_blue(current_firmware_version)}).') #type: ignore[arg-type]
         return True
-    if not confirm(config, f'Current IMD firmware version is {format_blue(current_firmware_version)}.\nUpgrade to {format_blue(target_firmware_version)}? (y or n): '): return True#type: ignore[arg-type]
-    firmware_file_path, firmware_filename = get_firmware_file_path(config = config)
-    if not bool(firmware_file_path):
-        if not quiet: print(format_red('Unable to find or download firmware. Please check your configuration.'))
-        return False
-    username, password = get_credentials(config)
-    token: str | bool = login_to_imd(config, quiet = True)
-    if bool(token):
-        return upgrade_imd_firmware(config, target_firmware_version, firmware_file_path, token, quiet)
+    current_firmware_lower_than_target: bool = version_is_higher(target_firmware_version, current_firmware_version) #type: ignore[arg-type]
+    if current_firmware_lower_than_target:
+        if not confirm(config, f'Current IMD firmware version is {format_blue(current_firmware_version)}.\nUpgrade to {format_blue(target_firmware_version)}? (y or n): '): return True#type: ignore[arg-type]
+        firmware_file_path, firmware_filename = get_firmware_file_path(config = config)
+        if not bool(firmware_file_path):
+            if not quiet: print(format_red('Unable to find or download firmware. Please check your configuration.'))
+            return False
+        username, password = get_credentials(config)
+        token: str | bool = login_to_imd(config, quiet = True)
+        if bool(token):
+            return upgrade_imd_firmware(config, target_firmware_version, firmware_file_path, token, quiet)
     return False
