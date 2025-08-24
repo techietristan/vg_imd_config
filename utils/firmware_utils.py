@@ -6,7 +6,7 @@ from utils.api_utils import login_to_imd
 from utils.dict_utils import get_value_if_key_exists
 from utils.format_utils import format_blue, format_red, truncate_message
 from utils.network_utils import wait_for_ping
-from utils.parse_utils import is_vaild_firmware_version, version_is_higher
+from utils.parse_utils import is_valid_firmware_version, version_is_higher
 from utils.prompt_utils import confirm, get_credentials
 from utils.spinner_utils import get_spinner
 
@@ -79,7 +79,7 @@ def get_firmware_version(config: dict, quiet: bool = False) -> str | bool:
             response_code: int = firmware_response['retCode']
             response_message: str = firmware_response['retMsg']
             firmware_version: str = firmware_response['data']
-            if response_code == 0 and is_vaild_firmware_version(config = config, firmware_version = firmware_version):
+            if response_code == 0 and is_valid_firmware_version(config = config, firmware_version = firmware_version):
                 if not quiet:
                     time.sleep(1)
                     spinner.succeed(f'\nCurrent IMD Firmware Version: {format_blue(firmware_version)}')
@@ -143,7 +143,7 @@ def prompt_to_upgrade_imd_firmware(config: dict, quiet: bool = True) -> bool:
         return True
     current_firmware_lower_than_target: bool = version_is_higher(target_firmware_version, current_firmware_version) #type: ignore[arg-type]
     if current_firmware_lower_than_target:
-        if not confirm(config, f'Current IMD firmware version is {format_blue(current_firmware_version)}.\nUpgrade to {format_blue(target_firmware_version)}? (y or n): '): return True#type: ignore[arg-type]
+        if not confirm(config, f'Current IMD firmware version is {format_blue(current_firmware_version)}.\nUpgrade to {format_blue(target_firmware_version)}? (y or n): '): return True #type: ignore[arg-type]
         firmware_file_path, firmware_filename = get_firmware_file_path(config = config)
         if not bool(firmware_file_path):
             if not quiet: print(format_red('Unable to find or download firmware. Please check your configuration.'))
@@ -152,4 +152,7 @@ def prompt_to_upgrade_imd_firmware(config: dict, quiet: bool = True) -> bool:
         token: str | bool = login_to_imd(config, quiet = True)
         if bool(token):
             return upgrade_imd_firmware(config, target_firmware_version, firmware_file_path, token, quiet)
+    else:
+        if not quiet: print(f'The current IMD firmware version {format_blue(current_firmware_version)} is newer than the target firmware version {format_blue(target_firmware_version)}.') #type: ignore[arg-type]
+        return True
     return False

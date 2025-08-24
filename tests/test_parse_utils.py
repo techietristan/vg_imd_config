@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from utils.parse_utils import contains_encrypted_defaults, has_encrypted_default, contains_unspecified_default, contains_unspecified_defaults, is_exactly, is_exactly_zero, is_exactly_one, is_boolean_false, is_boolean_true, is_vaild_firmware_version, is_valid_hostname, get_next_in_sequence, guess_next_hostname, parse_firmware_url, verify_input, version_is_higher
+from utils.parse_utils import contains_encrypted_defaults, has_encrypted_default, contains_unspecified_default, contains_unspecified_defaults, is_exactly, is_exactly_zero, is_exactly_one, is_boolean_false, is_boolean_true, is_valid_firmware_version, is_valid_hostname, get_next_in_sequence, guess_next_hostname, parse_firmware_url, verify_input, version_is_higher
 
 test_config: dict = {
     "hostname_format": {
@@ -56,21 +56,21 @@ class TestIsBooleanTrue(TestCase):
 class TestIsValidFirmwareVersion(TestCase):
 
     def test_is_valid_firmware_version_valid_string(self):
-        self.assertTrue(is_vaild_firmware_version(test_config, '1.2.3'))
-        self.assertTrue(is_vaild_firmware_version(test_config, '01.02.03'))
-        self.assertTrue(is_vaild_firmware_version(test_config, '10.02.33'))
-        self.assertTrue(is_vaild_firmware_version(test_config, '10.2.33'))
+        self.assertTrue(is_valid_firmware_version(test_config, '1.2.3'))
+        self.assertTrue(is_valid_firmware_version(test_config, '01.02.03'))
+        self.assertTrue(is_valid_firmware_version(test_config, '10.02.33'))
+        self.assertTrue(is_valid_firmware_version(test_config, '10.2.33'))
 
     def test_is_valid_firmware_version_invalid_chars(self):
-        self.assertFalse(is_vaild_firmware_version(test_config, 'a.b.c'))
-        self.assertFalse(is_vaild_firmware_version(test_config, '10.b.c'))
-        self.assertFalse(is_vaild_firmware_version(test_config, '01.b.3'))
+        self.assertFalse(is_valid_firmware_version(test_config, 'a.b.c'))
+        self.assertFalse(is_valid_firmware_version(test_config, '10.b.c'))
+        self.assertFalse(is_valid_firmware_version(test_config, '01.b.3'))
 
     def test_is_valid_firmware_version_invalid_type(self):
-        self.assertFalse(is_vaild_firmware_version(test_config, None))
-        self.assertFalse(is_vaild_firmware_version(test_config, False))
-        self.assertFalse(is_vaild_firmware_version(test_config, 3.3))
-        self.assertFalse(is_vaild_firmware_version(test_config, {'key': 'value'}))
+        self.assertFalse(is_valid_firmware_version(test_config, None))
+        self.assertFalse(is_valid_firmware_version(test_config, False))
+        self.assertFalse(is_valid_firmware_version(test_config, 3.3))
+        self.assertFalse(is_valid_firmware_version(test_config, {'key': 'value'}))
 
 class TestIsValidHostname(TestCase):
 

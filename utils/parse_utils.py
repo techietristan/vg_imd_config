@@ -26,7 +26,7 @@ def is_valid(config: dict, regex: str, string: str) -> bool:
     regex_match = re.match(regex, string)
     return not regex_match == None
 
-def is_vaild_firmware_version(config: dict, firmware_version: str) -> bool:
+def is_valid_firmware_version(config: dict, firmware_version: str) -> bool:
     valid_firmware_regex: str = r'^[0-9]{1,2}.[0-9]{1,2}.[0-9]{1,2}$'
     return is_valid(config, valid_firmware_regex, firmware_version)
 
